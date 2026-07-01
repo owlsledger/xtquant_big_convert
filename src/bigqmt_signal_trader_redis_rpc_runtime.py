@@ -56,6 +56,12 @@ RPC_BACKGROUND_THREADS = False
 # "*" expands to read-only RPC methods only. Order/cancel/sync methods still go
 # through the queue fallback and require schedule_adjust=True when enabled.
 RPC_LISTENER_METHODS = ("*",)
+# Transport selection. Default "redis" (zero behavior change). Set to "zmq" /
+# "mysql" / "shm" in the local config to switch the wire. zmq/mysql sub-config
+# (bind/connect address, pool sizing, ...) is forwarded verbatim to the factory.
+RPC_TRANSPORT = "redis"
+RPC_ZMQ_CONFIG = {}
+RPC_MYSQL_CONFIG = {}
 SCHEDULE_ADJUST_ENABLED = True
 # How often the strategy thread drains the RPC queue (via adjust). Lower = less
 # queue wait for read RPCs. Verify on the live box that run_time honors sub-3s
@@ -145,6 +151,11 @@ def _apply_config(account_id):
             "process_in_listener": RPC_PROCESS_IN_LISTENER,
             "listener_methods": RPC_LISTENER_METHODS,
             "background_threads": RPC_BACKGROUND_THREADS,
+            # Transport selection (default redis). Forwarded from the local
+            # config so the factory can pick zmq/mysql/shm.
+            "transport": RPC_TRANSPORT,
+            "zmq": RPC_ZMQ_CONFIG,
+            "mysql": RPC_MYSQL_CONFIG,
         },
         full_tick_cache={
             "enabled": FULL_TICK_CACHE_ENABLED,
@@ -164,7 +175,7 @@ def configure_runtime_account(account_id):
 
 
 def configure_runtime_redis(redis_config):
-    global REDIS_HOST, REDIS_PORT, REDIS_DB, REDIS_USERNAME, REDIS_PASSWORD, RPC_ALLOW_ORDER_METHODS, RPC_PROCESS_IN_LISTENER, RPC_BACKGROUND_THREADS, RPC_LISTENER_METHODS, SCHEDULE_ADJUST_ENABLED, SCHEDULE_ADJUST_INTERVAL, FULL_TICK_CACHE_ENABLED, FULL_TICK_DEMAND_TTL_SECONDS, FULL_TICK_CACHE_TTL_SECONDS, FULL_TICK_REFRESH_INTERVAL_SECONDS, FULL_TICK_MARKET_REFRESH_INTERVAL_SECONDS, FULL_TICK_REFRESH_MAX_WALL_SECONDS, FULL_TICK_MAX_REQUESTS
+    global REDIS_HOST, REDIS_PORT, REDIS_DB, REDIS_USERNAME, REDIS_PASSWORD, RPC_ALLOW_ORDER_METHODS, RPC_PROCESS_IN_LISTENER, RPC_BACKGROUND_THREADS, RPC_LISTENER_METHODS, SCHEDULE_ADJUST_ENABLED, SCHEDULE_ADJUST_INTERVAL, FULL_TICK_CACHE_ENABLED, FULL_TICK_DEMAND_TTL_SECONDS, FULL_TICK_CACHE_TTL_SECONDS, FULL_TICK_REFRESH_INTERVAL_SECONDS, FULL_TICK_MARKET_REFRESH_INTERVAL_SECONDS, FULL_TICK_REFRESH_MAX_WALL_SECONDS, FULL_TICK_MAX_REQUESTS, RPC_TRANSPORT, RPC_ZMQ_CONFIG, RPC_MYSQL_CONFIG
     redis_config = dict(redis_config or {})
     REDIS_HOST = redis_config.get("host", REDIS_HOST)
     REDIS_PORT = int(redis_config.get("port", REDIS_PORT))
@@ -177,6 +188,9 @@ def configure_runtime_redis(redis_config):
     )
     RPC_BACKGROUND_THREADS = bool(redis_config.get("rpc_background_threads", RPC_BACKGROUND_THREADS))
     RPC_LISTENER_METHODS = tuple(redis_config.get("rpc_listener_methods", RPC_LISTENER_METHODS))
+    RPC_TRANSPORT = str(redis_config.get("transport", RPC_TRANSPORT)).lower()
+    RPC_ZMQ_CONFIG = dict(redis_config.get("zmq", RPC_ZMQ_CONFIG))
+    RPC_MYSQL_CONFIG = dict(redis_config.get("mysql", RPC_MYSQL_CONFIG))
     SCHEDULE_ADJUST_ENABLED = bool(redis_config.get("schedule_adjust", SCHEDULE_ADJUST_ENABLED))
     if not RPC_BACKGROUND_THREADS:
         SCHEDULE_ADJUST_ENABLED = True
