@@ -109,10 +109,18 @@ def _build_rpc_service(context_info, app, config):
     if not enabled:
         return None
 
-    from bigqmt_signal_trader.adapters.market_bigqmt import BigQmtMarketDataProvider
-    from bigqmt_signal_trader.adapters.position_bigqmt import BigQmtPositionProvider
+    import importlib
+    from bigqmt_signal_trader.adapters import market_bigqmt as _market_bigqmt
+    from bigqmt_signal_trader.adapters import position_bigqmt as _position_bigqmt
     from bigqmt_signal_trader.adapters.redis_common import build_redis_client
     from bigqmt_signal_trader.redis_rpc import BigQmtRpcHandlers, RedisPubSubRpcService
+
+    # QMT keeps strategy modules in the same process between editor reruns.
+    # Reload adapters here so synced local package fixes take effect immediately.
+    _market_bigqmt = importlib.reload(_market_bigqmt)
+    _position_bigqmt = importlib.reload(_position_bigqmt)
+    BigQmtMarketDataProvider = _market_bigqmt.BigQmtMarketDataProvider
+    BigQmtPositionProvider = _position_bigqmt.BigQmtPositionProvider
 
     qmt_api = dict(config.get("qmt_api") or {})
     redis_config = dict(config.get("redis") or {})
