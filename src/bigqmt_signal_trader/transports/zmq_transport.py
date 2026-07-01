@@ -32,8 +32,29 @@ from ..redis_rpc import (
 from .base import RpcTransport, TransportError, TransportTimeout
 
 
-DEFAULT_BIND_ADDRESS = "ipc:///tmp/bigqmt_rpc_{account_id}.sock"
-DEFAULT_CONNECT_ADDRESS_TEMPLATE = "ipc:///tmp/bigqmt_rpc_{account_id}.sock"
+# ZMQ does not support ipc:// on Windows (it trips a signaler abort), so the
+# default endpoint is tcp loopback. The port is derived from the account_id so
+# distinct accounts don't collide on the same port; override via config when
+# needed. Base 15560 keeps it clear of common dev ports.
+DEFAULT_ZMQ_HOST = "127.0.0.1"
+DEFAULT_ZMQ_BASE_PORT = 15560
+DEFAULT_ZMQ_PORT_RANGE = 100  # derived port = base + (account_id_int mod range)
+
+
+def _default_zmq_port(account_id):
+    """Derive a stable port from account_id so each account gets its own socket."""
+    text = str(account_id or "")
+    digits = "".join(ch for ch in text if ch.isdigit())
+    try:
+        offset = int(digits) % DEFAULT_ZMQ_PORT_RANGE if digits else 0
+    except ValueError:
+        offset = 0
+    return DEFAULT_ZMQ_BASE_PORT + offset
+
+
+def _default_zmq_address(account_id, host=None):
+    host = host or DEFAULT_ZMQ_HOST
+    return "tcp://%s:%d" % (host, _default_zmq_port(account_id))
 
 
 def _loads(raw):
@@ -60,6 +81,8 @@ class ZmqTransport(RpcTransport):
         self,
         bind_address=None,
         connect_address=None,
+        host=None,
+        port=None,
         account_id="",
         print_prefix="[bigqmt_rpc]",
         io_threads=1,
@@ -68,9 +91,16 @@ class ZmqTransport(RpcTransport):
         client_linger_ms=0,
     ):
         super(ZmqTransport, self).__init__(account_id=account_id, print_prefix=print_prefix)
-        # Resolve default ipc endpoints from account_id so distinct accounts
-        # don't collide on the same socket file.
-        self.bind_address = bind_address or DEFAULT_BIND_ADDRESS.format(account_id=account_id)
+        # Address resolution order: explicit bind_address/connect_address win;
+        # otherwise build tcp://host:port from host/port (port defaults to a
+        # value derived from account_id so distinct accounts don't collide).
+        resolved_host = host or DEFAULT_ZMQ_HOST
+        if port is not None:
+            resolved_port = int(port)
+        else:
+            resolved_port = _default_zmq_port(account_id)
+        default_addr = "tcp://%s:%d" % (resolved_host, resolved_port)
+        self.bind_address = bind_address or default_addr
         self.connect_address = connect_address
         self.io_threads = int(io_threads)
         self.recv_timeout_seconds = float(recv_timeout_seconds)
@@ -95,6 +125,8 @@ class ZmqTransport(RpcTransport):
         return cls(
             bind_address=config.get("bind_address"),
             connect_address=config.get("connect_address"),
+            host=config.get("host"),
+            port=config.get("port"),
             account_id=config.get("account_id", account_id),
             print_prefix=print_prefix,
             io_threads=int(config.get("io_threads", 1)),
@@ -207,9 +239,9 @@ class ZmqTransport(RpcTransport):
     def _ensure_dealer(self):
         zmq, ctx = self._ensure_zmq()
         if self._dealer is None:
-            address = self.connect_address or DEFAULT_CONNECT_ADDRESS_TEMPLATE.format(
-                account_id=self.account_id
-            )
+            # connect_address may be None if the client was built with only an
+            # account_id; fall back to the default tcp address derived from it.
+            address = self.connect_address or _default_zmq_address(self.account_id)
             sock = ctx.socket(zmq.DEALER)
             # Unique identity so ROUTER can route replies back to us.
             sock.setsockopt(zmq.IDENTITY, uuid.uuid4().hex.encode("utf-8")[:16])
