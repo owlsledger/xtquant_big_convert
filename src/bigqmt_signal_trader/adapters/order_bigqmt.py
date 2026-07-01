@@ -117,7 +117,12 @@ class BigQmtOrderGateway:
 
     def query_orders(self, account_id, strategy_name):
         query = self._require_query_func()
-        rows = query(account_id, self.account_type, "ORDER", strategy_name) or []
+        # QMT's get_trade_detail_data can raise on ORDER queries in some states
+        # (e.g. context not bound). Degrade to empty like query_trades does.
+        try:
+            rows = query(account_id, self.account_type, "ORDER", strategy_name) or []
+        except Exception:
+            return []
         result = []
         for row in rows:
             result.append(
