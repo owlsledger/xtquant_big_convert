@@ -10,24 +10,29 @@
 
 ### RPC 接口（远程可调用）
 
-通过 RPC 可调用的大 QMT 能力（**白名单 76 个只读方法 + 2 个下单方法 + 12 个 MiniQMT 风格别名**）：
+通过 RPC 可调用的大 QMT 能力（**白名单 117 个只读方法 + 2 个下单方法 + 12 个 MiniQMT 风格别名**，覆盖官方文档全部交易/查询函数）：
 
 | 类别 | 方法 |
 |------|------|
 | **系统** | `ping` |
 | **行情快照** | `get_ticks` / `get_full_tick`（五档盘口）|
-| **合约/品种** | `get_instrument` / `get_instrument_type` / `get_stock_name` / `get_stock_type` / `get_last_close` / `get_last_volume` / `get_open_date` / `get_contract_expire_date` / `get_contract_multiplier` / `get_float_caps` / `get_total_share` / `get_turn_over_rate` / `get_weight_in_index` / `get_svol` / `get_bvol` / `get_risk_free_rate` |
-| **K线/历史** | `get_market_data` / `get_market_data_ex` / `get_local_data` / `get_close_price` |
-| **板块** | `get_stock_list_in_sector` / `get_sector_list`* / `get_sector_info` / `create_sector`（写自定义板块）|
-| **交易日历** | `get_trading_dates` / `get_holidays`* / `get_markets`* / `get_market_last_trade_date`* / `get_date_location` |
-| **数据下载** | `download_history_data` / `download_history_data2` / `download_holiday_data` / `download_etf_info` |
+| **合约/品种** | `get_instrument` / `get_instrument_type` / `get_stock_name` / `get_stock_type` / `get_last_close` / `get_last_volume` / `get_open_date` / `get_contract_expire_date` / `get_contract_multiplier` / `get_float_caps` / `get_total_share` / `get_turn_over_rate` / `get_weight_in_index` / `get_svol` / `get_bvol` / `get_risk_free_rate` / `is_stock_type` / `get_cb_info` |
+| **K线/历史** | `get_market_data` / `get_market_data_ex` / `get_local_data` / `get_close_price` / `get_index_weight` |
+| **L2 行情** | `get_l2_quote` / `get_l2_order` / `get_l2_transaction` / `subscribe_l2thousand`（需 L2 权限）|
+| **板块** | `get_stock_list_in_sector` / `get_sector_list`* / `get_sector_info` / `create_sector` / `add_sector` / `remove_sector` |
+| **交易日历/时段** | `get_trading_dates` / `get_holidays`* / `get_markets`* / `get_market_last_trade_date`* / `get_date_location` / `get_trading_calendar` / `get_trade_times` |
+| **数据下载** | `download_history_data` / `download_history_data2` / `download_holiday_data` / `download_etf_info` / `download_cb_data` / `download_history_contracts` / `download_index_weight` / `download_sector_data` |
 | **财务/因子** | `get_financial_data` / `download_financial_data` / `download_financial_data2` / `get_raw_financial_data` / `get_factor_data` |
 | **ETF/期权/期货** | `get_etf_info` / `get_ipo_info` / `get_option_list` / `get_his_option_list` / `get_his_option_list_batch` / `get_option_detail_data` / `get_option_undl_data` / `get_option_undl` / `get_ETF_list` / `get_main_contract` / `get_his_contract_list` |
 | **期权定价** | `bsm_price` / `bsm_iv` / `get_option_iv` |
 | **龙虎榜/股东** | `get_longhubang` / `get_top10_share_holder` / `get_holder_num` / `get_turnover_rate`（区间换手率）/ `get_industry` / `get_his_st_data` / `get_his_index_data` |
-| **资金流** | `get_north_finance_change`（北向）/ `get_hkt_statistics`（港股通）/ `get_hkt_details` |
+| **资金流** | `get_north_finance_change`（北向）/ `get_hkt_statistics`（港股通）/ `get_hkt_details` / `get_hkt_exchange_rate` |
 | **因子/模型** | `call_formula` / `subscribe_formula` / `unsubscribe_formula` / `get_formula_result` / `gen_factor_index` |
-| **账户查询** | `get_asset`（资金）/ `get_positions`（持仓）/ `query_stock_position`（单股持仓）/ `query_orders`（委托）/ `query_trades`（成交）|
+| **时间转换** | `datetime_to_timetag` / `timetag_to_datetime` / `timetagToDateTime`（纯本地计算）|
+| **账户查询** | `get_asset`（资金）/ `get_positions`（持仓）/ `query_stock_position`（单股持仓）/ `query_orders`（委托）/ `query_trades`（成交）/ `get_history_trade_detail_data`（历史成交）/ `get_value_by_order_id` / `get_last_order_id` |
+| **新股/打新** | `get_ipo_data` / `get_new_purchase_limit` |
+| **融资融券** | `get_assure_contract`（担保品）/ `get_enable_short_contract`（融券标的）/ `get_unclosed_compacts`（未平仓）/ `get_closed_compacts`（已平仓）/ `get_debt_contract`（负债）—— 需两融权限，普通账户降级为空 |
+| **期权持仓** | `get_option_subject_position`（标的持仓）/ `get_comb_option`（组合期权）|
 | **持仓同步** | `sync_positions`（写回 Redis 供客户端缓存）|
 | **下单/撤单** | `submit_order` / `cancel_order`（默认关闭，需显式开启）|
 

@@ -13,11 +13,12 @@
 |------|-------|------|
 | 系统 | 1 | `ping` |
 | 行情快照 | 2 | `get_ticks` / `get_instrument` |
-| 行情/K线/基本面（转发适配器）| 67 | 见下表 |
+| 行情/K线/基本面（转发适配器）| 84 | 见下表 |
 | 账户/持仓/委托 | 5 | `get_asset` / `get_positions` / `query_stock_position` / `query_orders` / `query_trades` |
+| 交易扩展查询（官方函数）| 13 | `get_value_by_order_id` / `get_last_order_id` / `get_ipo_data` / `get_new_purchase_limit` / `get_history_trade_detail_data` / 融资融券5个 / 期权持仓2个 / 港股通汇率 |
 | 持仓同步 | 1 | `sync_positions` |
 | 下单/撤单 | 2 | `submit_order` / `cancel_order`（默认关闭）|
-| **合计** | **76 只读 + 2 下单 = 78** | |
+| **合计** | **117 只读 + 2 下单 = 119** | |
 
 另有 **12 个 MiniQMT 风格别名**（见末节），调用时自动映射到上表方法。
 
@@ -65,7 +66,7 @@
 
 ## 3. 行情 / K线 / 板块 / 日历 / 下载 / 财务 / 期权 / 龙虎榜 / 资金流 / 因子
 
-下列 67 个方法统一通过 `_handle_market_data_method` **按方法名转发给 `BigQmtMarketDataProvider` 的同名方法**，参数字典直接 `**kwargs` 展开。调用方按下方签名传参即可。客户端兼容层对常用方法有显式封装，其余用 `xtdata.call_method(name, **params)`。
+下列 84 个方法统一通过 `_handle_market_data_method` **按方法名转发给 `BigQmtMarketDataProvider` 的同名方法**，参数字典直接 `**kwargs` 展开。调用方按下方签名传参即可。客户端兼容层对常用方法有显式封装，其余用 `xtdata.call_method(name, **params)`。
 
 ### 3.1 品种/类型
 
@@ -245,6 +246,30 @@
 ### `query_trades`
 - **参数**：`account_id`(可选) `strategy_name`(str)
 - **返回**：成交明细 `list`。
+
+---
+
+## 4.5 官方交易查询函数（Big QMT 运行时注入）
+
+这些函数和 `passorder` 一样由 Big QMT 进程在运行时注入全局命名空间，**不在 ContextInfo 桩里**。函数名严格按官方文档（`trading_function.html`）。无对应权限（如两融账户）时降级为空列表。
+
+| 方法 | 参数 | 说明 |
+|------|------|------|
+| `get_value_by_order_id` | `order_id`（必填）| 按 order_id 查委托详情 |
+| `get_last_order_id` | `account_id`(可选) | 最近委托号 |
+| `get_ipo_data` | `account_id`(可选) | 新股数据 |
+| `get_new_purchase_limit` | `account_id`(可选) | 新股申购额度 |
+| `get_history_trade_detail_data` | `account_id`(可选) `detail_type`("DEAL"/"ORDER") `start_date` `end_date` | 历史成交明细 |
+| `get_assure_contract` | `account_id`(可选) | 融资标的（担保品）合约 |
+| `get_enable_short_contract` | `account_id`(可选) | 融券标的合约 |
+| `get_unclosed_compacts` | `account_id`(可选) | 未平仓合约（负债）|
+| `get_closed_compacts` | `account_id`(可选) | 已平仓合约 |
+| `get_debt_contract` | `account_id`(可选) | 负债合约 |
+| `get_option_subject_position` | `account_id`(可选) | 期权标的持仓 |
+| `get_comb_option` | `account_id`(可选) | 组合期权 |
+| `get_hkt_exchange_rate` | 无 | 港股通汇率 |
+
+> **融资融券查询的正确方式**：官方文档明确 `get_trade_detail_data` 的合法 `strDatatype` 只有 6 个（`ACCOUNT`/`POSITION`/`POSITION_STATISTICS`/`ORDER`/`DEAL`/`TASK`）。两融查询必须用上述独立函数，不要传 `"CREDIT"` 等字符串。
 
 ---
 
