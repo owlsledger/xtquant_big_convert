@@ -13,11 +13,11 @@
 |------|-------|------|
 | 系统 | 1 | `ping` |
 | 行情快照 | 2 | `get_ticks` / `get_instrument` |
-| 行情/K线（转发适配器）| 29 | 见下表 |
+| 行情/K线/基本面（转发适配器）| 67 | 见下表 |
 | 账户/持仓/委托 | 5 | `get_asset` / `get_positions` / `query_stock_position` / `query_orders` / `query_trades` |
 | 持仓同步 | 1 | `sync_positions` |
 | 下单/撤单 | 2 | `submit_order` / `cancel_order`（默认关闭）|
-| **合计** | **38 只读 + 2 下单 = 40** | |
+| **合计** | **76 只读 + 2 下单 = 78** | |
 
 另有 **12 个 MiniQMT 风格别名**（见末节），调用时自动映射到上表方法。
 
@@ -63,9 +63,9 @@
 
 ---
 
-## 3. 行情 / K线 / 板块 / 日历 / 下载 / 财务 / 期权 / 因子
+## 3. 行情 / K线 / 板块 / 日历 / 下载 / 财务 / 期权 / 龙虎榜 / 资金流 / 因子
 
-下列 29 个方法统一通过 `_handle_market_data_method` **按方法名转发给 `BigQmtMarketDataProvider` 的同名方法**，参数字典直接 `**kwargs` 展开。调用方按下方签名传参即可。
+下列 67 个方法统一通过 `_handle_market_data_method` **按方法名转发给 `BigQmtMarketDataProvider` 的同名方法**，参数字典直接 `**kwargs` 展开。调用方按下方签名传参即可。客户端兼容层对常用方法有显式封装，其余用 `xtdata.call_method(name, **params)`。
 
 ### 3.1 品种/类型
 
@@ -149,6 +149,69 @@
 | `unsubscribe_formula` | `request_id` | 取消订阅 |
 | `get_formula_result` | `request_id` `start_time` `end_time` `count` `timeout_second` | 取公式结果 |
 | `gen_factor_index` | `data_name` `formula_name` `vars` `sector_list`(list) `start_time` `end_time` `period` `dividend_type` | 生成因子 |
+
+### 3.8 龙虎榜 / 股东 / 换手率 / 行业
+
+| 方法 | 参数 | 说明 |
+|------|------|------|
+| `get_longhubang` | `stock_list`(list) `start_time` `end_time` `count`(int) | 龙虎榜明细（DataFrame）|
+| `get_top10_share_holder` | `stock_list`(list) `data_name`("holder"/"flow_holder") `start_time` `end_time` `report_type`("report_time"/"announce_time") | 十大股东 |
+| `get_holder_num` | `stock_list`(list) `start_time` `end_time` `report_type` | 股东户数 |
+| `get_turnover_rate` | `stock_code`(list) `start_time` `end_time`（均 8 位 YYYYMMDD）| 区间换手率（DataFrame）|
+| `get_industry` | `industry_name`(str) | 行业成分股 |
+| `get_his_st_data` | `stock_code`(str) | 历史 ST 状态 |
+
+### 3.9 期权定价 / 隐含波动率
+
+| 方法 | 参数 | 说明 |
+|------|------|------|
+| `bsm_price` | `opt_type`("C"/"P") `target_price`(数值或 list) `strike_price` `risk_free` `sigma` `days` `dividend`(默认0) | B-S-M 期权定价（可批量）|
+| `bsm_iv` | `opt_type` `target_price` `strike_price` `option_price` `risk_free` `days` `dividend` | 隐含波动率反推 |
+| `get_option_iv` | `opt_code`(str) | 单只期权隐含波动率 |
+| `get_option_detail_data` | `stockcode`(str) | 期权合约详情 |
+| `get_option_undl_data` | `undl_code_ref`(str，空=全市场) | 标的下所有期权 |
+| `get_option_undl` | `opt_code`(str) | 期权的标的代码 |
+
+### 3.10 财务扩展 / 因子库
+
+| 方法 | 参数 | 说明 |
+|------|------|------|
+| `get_raw_financial_data` | `field_list`(list) `stock_list`(list) `start_time` `end_time` `report_type` `data_type`("dict"/"frame") | 原始财务（未字段对齐）|
+| `get_factor_data` | `field_list`(list) `stock_list`(list) `start_date` `end_date` | 因子库数据 |
+| `get_his_index_data` | `stock_code`(str) | 历史指数权重 |
+
+### 3.11 期货 / 合约 / 资金流
+
+| 方法 | 参数 | 说明 |
+|------|------|------|
+| `get_main_contract` | `code_market`(str) | 主力合约 |
+| `get_his_contract_list` | `market`(str) | 历史合约列表 |
+| `get_date_location` | `date` | 日期在交易日历的位置 |
+| `get_ETF_list` | `market` `stock_code` `type_list`(list) | ETF 列表 |
+| `get_north_finance_change` | `period` | 北向资金流入流出 |
+| `get_hkt_statistics` | `stock_code` | 港股通统计 |
+| `get_hkt_details` | `stock_code` | 港股通明细 |
+
+### 3.12 板块管理 / 基础查询
+
+| 方法 | 参数 | 说明 |
+|------|------|------|
+| `create_sector` | `sector_name` `stock_list`(list) | 创建/更新自定义板块（写操作）|
+| `get_stock_name` | `stock` | 股票名称（如「平安银行」）|
+| `get_stock_type` | `stock` | 股票类型 |
+| `get_last_close` | `stock` | 昨收价 |
+| `get_last_volume` | `stock` | 昨量 |
+| `get_open_date` | `stock` | 上市日期 |
+| `get_contract_expire_date` | `stock` | 到期日（股票返回 99999999）|
+| `get_contract_multiplier` | `stockcode` | 合约乘数 |
+| `get_float_caps` | `stockcode` | 流通市值 |
+| `get_total_share` | `stockcode` | 总股本 |
+| `get_turn_over_rate` | `stockcode` | 换手率（单值版）|
+| `get_weight_in_index` | `mtkindexcode` `stockcode` | 指数中权重 |
+| `get_svol` | `stock` | | 
+| `get_bvol` | `stock` | |
+| `get_risk_free_rate` | `index`(int, 默认-1) | 无风险利率 |
+| `get_close_price` | `market` `stock_code` `real_timetag` `period`(默认86400000) `divid_type`(默认0) | 指定时点收盘价 |
 
 ---
 
@@ -249,6 +312,10 @@
 | 合约详情（`get_instrumentdetail`）| ✅ ContextInfo | ✅ xtdata |
 | 板块内股票（`get_stock_list_in_sector`）| ✅ ContextInfo | ✅ xtdata |
 | 交易日历（`get_trading_dates`）| ✅ ContextInfo | ✅ xtdata |
+| 龙虎榜/股东/换手率（`get_longhubang` 等）| ✅ ContextInfo | ❌ xtdata 无 |
+| 期权定价（`bsm_price`/`bsm_iv`/`get_option_iv`）| ✅ ContextInfo | ❌ xtdata 无 |
+| 北向资金/港股通（`get_north_finance_change` 等）| ✅ ContextInfo | ❌ xtdata 无 |
+| 基础查询（`get_stock_name`/`get_float_caps` 等）| ✅ ContextInfo | ❌ xtdata 无 |
 | **板块列表**（`get_sector_list`）| ⚠️ fallback 常用板块 | ✅ xtdata（需连行情服务）|
 | **节假日**（`get_holidays`）| ⚠️ 从日历反推 | ✅ xtdata（需连行情服务）|
 | `get_markets` | 合成 4 市场 | 无此函数 |

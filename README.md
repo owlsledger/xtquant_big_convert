@@ -10,22 +10,28 @@
 
 ### RPC 接口（远程可调用）
 
-通过 RPC 可调用的大 QMT 能力（**白名单 38 个只读方法 + 2 个下单方法 + 12 个 MiniQMT 风格别名**）：
+通过 RPC 可调用的大 QMT 能力（**白名单 76 个只读方法 + 2 个下单方法 + 12 个 MiniQMT 风格别名**）：
 
 | 类别 | 方法 |
 |------|------|
 | **系统** | `ping` |
 | **行情快照** | `get_ticks` / `get_full_tick`（五档盘口）|
-| **合约/品种** | `get_instrument` / `get_instrument_type` |
-| **K线/历史** | `get_market_data` / `get_market_data_ex` / `get_local_data` |
-| **板块** | `get_stock_list_in_sector` / `get_sector_list`* / `get_sector_info` |
-| **交易日历** | `get_trading_dates` / `get_holidays`* / `get_markets`* / `get_market_last_trade_date`* |
+| **合约/品种** | `get_instrument` / `get_instrument_type` / `get_stock_name` / `get_stock_type` / `get_last_close` / `get_last_volume` / `get_open_date` / `get_contract_expire_date` / `get_contract_multiplier` / `get_float_caps` / `get_total_share` / `get_turn_over_rate` / `get_weight_in_index` / `get_svol` / `get_bvol` / `get_risk_free_rate` |
+| **K线/历史** | `get_market_data` / `get_market_data_ex` / `get_local_data` / `get_close_price` |
+| **板块** | `get_stock_list_in_sector` / `get_sector_list`* / `get_sector_info` / `create_sector`（写自定义板块）|
+| **交易日历** | `get_trading_dates` / `get_holidays`* / `get_markets`* / `get_market_last_trade_date`* / `get_date_location` |
 | **数据下载** | `download_history_data` / `download_history_data2` / `download_holiday_data` / `download_etf_info` |
-| **财务/ETF/期权** | `get_financial_data` / `download_financial_data` / `download_financial_data2` / `get_etf_info` / `get_ipo_info` / `get_option_list` / `get_his_option_list` / `get_his_option_list_batch` / `get_divid_factors` |
+| **财务/因子** | `get_financial_data` / `download_financial_data` / `download_financial_data2` / `get_raw_financial_data` / `get_factor_data` |
+| **ETF/期权/期货** | `get_etf_info` / `get_ipo_info` / `get_option_list` / `get_his_option_list` / `get_his_option_list_batch` / `get_option_detail_data` / `get_option_undl_data` / `get_option_undl` / `get_ETF_list` / `get_main_contract` / `get_his_contract_list` |
+| **期权定价** | `bsm_price` / `bsm_iv` / `get_option_iv` |
+| **龙虎榜/股东** | `get_longhubang` / `get_top10_share_holder` / `get_holder_num` / `get_turnover_rate`（区间换手率）/ `get_industry` / `get_his_st_data` / `get_his_index_data` |
+| **资金流** | `get_north_finance_change`（北向）/ `get_hkt_statistics`（港股通）/ `get_hkt_details` |
 | **因子/模型** | `call_formula` / `subscribe_formula` / `unsubscribe_formula` / `get_formula_result` / `gen_factor_index` |
 | **账户查询** | `get_asset`（资金）/ `get_positions`（持仓）/ `query_stock_position`（单股持仓）/ `query_orders`（委托）/ `query_trades`（成交）|
 | **持仓同步** | `sync_positions`（写回 Redis 供客户端缓存）|
 | **下单/撤单** | `submit_order` / `cancel_order`（默认关闭，需显式开启）|
+
+> 客户端兼容层 `BigQmtXtData` 对常用方法有显式封装（`xtdata.get_longhubang(...)`、`xtdata.bsm_price(...)` 等），其余通过万能入口 `xtdata.call_method("get_float_caps", stockcode="000001.SZ")` 调用。
 
 > `*` 标记的方法在大 QMT（完整交易端）环境下用 **fallback** 实现（非原生数据）：`get_sector_list` 返回常用板块名清单，`get_holidays` 从交易日历反推，`get_markets` 返回固定市场集合，`get_market_last_trade_date` 从日历派生。详见 [docs/RPC_API_REFERENCE.md](docs/RPC_API_REFERENCE.md) 第 8 节「大 QMT 环境的能力边界」。
 
