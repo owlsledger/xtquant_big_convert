@@ -5,12 +5,10 @@ import sys
 
 
 def _known_qmt_python_dir():
-    # Best-effort fallback only; the real path comes from __file__ below. Uses the
-    # stock install name (no machine-specific suffix). Keep this file pure ASCII:
-    # it is declared #coding:gbk, so build the CJK dir name from code points.
-    root = "".join(chr(value) for value in (0x56fd, 0x91d1, 0x8bc1, 0x5238))
-    suffix = "".join(chr(value) for value in (0x4ea4, 0x6613, 0x7aef))
-    return "D:\\" + root + "QMT" + suffix + "\\python"
+    # Best-effort fallback only; the real path comes from __file__ below.
+    # The default QMT install dir is pure ASCII, so inline it directly.
+    # Update this if you relocate the QMT install.
+    return r"D:\guoseniquant\python"
 
 
 _qmt_paths = []

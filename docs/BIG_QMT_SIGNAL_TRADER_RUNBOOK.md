@@ -76,7 +76,7 @@ if hasattr(ContextInfo, "is_last_bar") and not ContextInfo.is_last_bar():
 大 QMT 运行目录：
 
 ```text
-<QMT_PYTHON_DIR>
+D:\guoseniquant\python
 ```
 
 源代码目录：
@@ -89,30 +89,30 @@ if hasattr(ContextInfo, "is_last_bar") and not ContextInfo.is_last_bar():
 
 ```powershell
 Copy-Item -Path '<REPO_ROOT>\src\bigqmt_signal_trader\*' `
-  -Destination '<QMT_PYTHON_DIR>\bigqmt_signal_trader' `
+  -Destination 'D:\guoseniquant\python\bigqmt_signal_trader' `
   -Recurse -Force
 
 Copy-Item -LiteralPath '<REPO_ROOT>\src\bigqmt_signal_trader_strategy.py' `
-  -Destination '<QMT_PYTHON_DIR>\bigqmt_signal_trader_strategy.py' `
+  -Destination 'D:\guoseniquant\python\bigqmt_signal_trader_strategy.py' `
   -Force
 
 Copy-Item -LiteralPath '<REPO_ROOT>\src\bigqmt_signal_trader_dryrun.py' `
-  -Destination '<QMT_PYTHON_DIR>\bigqmt_signal_trader_dryrun.py' `
+  -Destination 'D:\guoseniquant\python\bigqmt_signal_trader_dryrun.py' `
   -Force
 
 Copy-Item -LiteralPath '<REPO_ROOT>\src\bigqmt_signal_trader_redis_dryrun.py' `
-  -Destination '<QMT_PYTHON_DIR>\bigqmt_signal_trader_redis_dryrun.py' `
+  -Destination 'D:\guoseniquant\python\bigqmt_signal_trader_redis_dryrun.py' `
   -Force
 ```
 
 清理缓存：
 
 ```powershell
-Get-ChildItem -LiteralPath '<QMT_PYTHON_DIR>\bigqmt_signal_trader' `
+Get-ChildItem -LiteralPath 'D:\guoseniquant\python\bigqmt_signal_trader' `
   -Recurse -Filter '__pycache__' -Directory -ErrorAction SilentlyContinue |
   Remove-Item -Recurse -Force
 
-Get-ChildItem -LiteralPath '<QMT_PYTHON_DIR>' `
+Get-ChildItem -LiteralPath 'D:\guoseniquant\python' `
   -Filter '__pycache__' -Directory -ErrorAction SilentlyContinue |
   Remove-Item -Recurse -Force
 ```
@@ -179,12 +179,12 @@ configure(mode="dryrun", account_id=ACCOUNT_ID or "dryrun")
 - 检查是否真的导入了 `bigqmt_signal_trader_strategy.py`。
 - 检查 QMT 输出窗或 `XtClient_Formula_YYYYMMDD.log` 是否有 traceback。
 
-## 4.3 Redis dry-run 入口
+### 4.3 Redis dry-run 入口
 
 已经新增安全观察入口：
 
 ```text
-<QMT_PYTHON_DIR>\bigqmt_signal_trader_redis_dryrun.py
+D:\guoseniquant\python\bigqmt_signal_trader_redis_dryrun.py
 ```
 
 默认配置：
@@ -201,7 +201,7 @@ OrderGateway = DryRunOrderGateway
 如果 QMT 的 `python` 目录存在本地私有配置文件，则 Redis 连接会被覆盖：
 
 ```text
-<QMT_PYTHON_DIR>\bigqmt_signal_trader_local_config.py
+D:\guoseniquant\python\bigqmt_signal_trader_local_config.py
 ```
 
 格式：
@@ -296,7 +296,7 @@ configure(mode="bigqmt", account_id=ACCOUNT_ID or "dryrun")
 ### 9:10 前
 
 - 确认 QMT 已登录。
-- 确认文件已部署到 `<QMT_PYTHON_DIR>`。
+- 确认文件已部署到 `D:\guoseniquant\python`。
 - 在策略编辑器里编译成功。
 - 确认“启动本地 python”未勾选。
 - 在模型交易页面用“模拟信号”启动 `bigqmt_signal_trader_dryrun.py` 或 `bigqmt_signal_trader_redis_dryrun.py`。

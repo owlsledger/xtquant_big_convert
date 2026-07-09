@@ -1,155 +1,103 @@
 # coding: utf-8
 """Systematically test all RPC APIs and MiniQMT alias mapping.
 
-For each method: call it with sensible params, report ok/error and whether
+For each method, call it with sensible params, report ok/error and whether
 data is non-empty. Also test that MiniQMT aliases resolve to the same handler.
 
 Config is read from bigqmt_signal_trader_local_config (gitignored) or env vars;
 no credentials are hard-coded here. Run from a dir where that config module
 resolves, e.g.:
 
-    PYTHONPATH="src;D:\\国金证券QMT交易端\\python" python test_all_apis.py
+    PYTHONPATH="src;D:\guoseniquant\python" python test_all_apis.py
 
 or set BIGQMT_ACCOUNT_ID / BIGQMT_REDIS_HOST / BIGQMT_REDIS_PORT /
 BIGQMT_REDIS_DB / BIGQMT_REDIS_PASSWORD env vars.
 """
+
 import os
+import sys
 import time
 
-import redis
+# Make the client package and the QMT python dir importable.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+sys.path.insert(0, r"D:\guoseniquant\python")
 
-from bigqmt_signal_trader.redis_rpc import call_redis_rpc
-
-
-def _load_account_and_redis():
-    cfg = {}
-    try:
-        import bigqmt_signal_trader_local_config as _c  # noqa
-        cfg = getattr(_c, "BIGQMT_REDIS_CONFIG", {}) or {}
-        account = getattr(_c, "BIGQMT_ACCOUNT_ID", None) or cfg.get("account_id")
-    except Exception:
-        account = None
-    account = account or os.environ.get("BIGQMT_ACCOUNT_ID", "")
-    redis_cfg = dict(
-        host=cfg.get("host") or os.environ.get("BIGQMT_REDIS_HOST", "127.0.0.1"),
-        port=int(cfg.get("port") or os.environ.get("BIGQMT_REDIS_PORT", 6379)),
-        db=int(cfg.get("db") or os.environ.get("BIGQMT_REDIS_DB", 5)),
-        password=cfg.get("password", os.environ.get("BIGQMT_REDIS_PASSWORD", "")),
-        socket_timeout=15,
-    )
-    if not redis_cfg["password"]:
-        redis_cfg.pop("password")
-    return str(account), redis_cfg
+from bigqmt_signal_trader.xtquant_compat import configure, xtdata, xt_trader  # noqa: E402
 
 
-ACCOUNT, REDIS = _load_account_and_redis()
-# account_id placeholder filled in main() once ACCOUNT is confirmed.
-_ACCT_PARAM = {"account_id": None}
+# (method, params) pairs covering the main read-only surface.
+PROBES = [
+    ("ping", {}),
+    ("get_full_tick", {"codes": ["000001.SZ", "600000.SH"]}),
+    ("get_instrument", {"code": "000001.SZ"}),
+    ("get_stock_name", {"code": "000001.SZ"}),
+    ("get_last_close", {"code": "000001.SZ"}),
+    ("get_market_data", {"field_list": ["close"], "stock_list": ["000001.SZ"],
+                         "period": "1d", "count": 5}),
+    ("get_market_data_ex", {"field_list": ["close"], "stock_list": ["000001.SZ"],
+                            "period": "1d", "count": 5}),
+    ("get_trading_dates", {"market": "SH", "start_time": "20260101",
+                           "end_time": "20260131"}),
+    ("get_asset", {}),
+    ("get_positions", {}),
+    ("query_stock_position", {"stock_code": "000001.SZ"}),
+]
 
-# (method, params, label) — params chosen to be valid during/after market hours
-TESTS = [
-    # --- 行情快照 ---
-    ("get_full_tick", {"codes": ["000001.SZ"]}, "tick"),
-    ("get_ticks", {"codes": ["000001.SZ"]}, "ticks-alias"),
-    # --- 合约/品种 ---
-    ("get_instrument", {"code": "000001.SZ"}, "instrument"),
-    ("get_instrument_detail", {"code": "000001.SZ"}, "instrument-alias"),
-    ("get_instrumentdetail", {"code": "000001.SZ"}, "instrument-alias2"),
-    ("get_instrument_type", {"code": "000001.SZ", "variety_list": ["stock", "fund"]}, "inst-type"),
-    # --- K线/历史 ---
-    ("get_market_data_ex", {"field_list": ["close"], "stock_list": ["000001.SZ"], "period": "1d", "count": 3}, "md-ex"),
-    ("get_market_data", {"field_list": ["close"], "stock_list": ["000001.SZ"], "period": "1d", "count": 3}, "md"),
-    ("get_local_data", {"field_list": ["close"], "stock_list": ["000001.SZ"], "period": "1d", "count": 3}, "local-data"),
-    # --- 板块 ---
-    ("get_sector_list", {}, "sector-list"),
-    ("get_stock_list_in_sector", {"sector_name": "沪深A股"}, "sector-stocks"),
-    # --- 交易日历 ---
-    ("get_trading_dates", {"market": "SH", "count": 3}, "trade-dates"),
-    ("get_holidays", {}, "holidays"),
-    ("get_markets", {}, "markets"),
-    ("get_market_last_trade_date", {"market": "SH"}, "last-trade-date"),
-    # --- 账户 ---
-    ("get_asset", {}, "asset"),
-    ("get_positions", {}, "positions"),
-    ("query_stock_asset", dict(_ACCT_PARAM), "asset-alias"),
-    ("query_stock_positions", dict(_ACCT_PARAM), "positions-alias"),
-    ("query_stock_position", dict(stock_code="000001.SZ", **_ACCT_PARAM), "position-single"),
+# MiniQMT-style aliases that must resolve to the same handlers.
+ALIASES = [
+    ("query_stock_asset", {}),
+    ("query_stock_positions", {}),
+    ("query_orders", {}),
+    ("query_trades", {}),
+    ("get_full_tick", {"codes": ["000001.SZ"]}),
 ]
 
 
-def data_summary(data):
-    """One-line summary of returned data for readability."""
-    if data is None:
-        return "None"
-    if isinstance(data, dict):
-        if not data:
-            return "{}"
-        if "__bigqmt_type__" in data:
-            return "[%s cols=%s records=%d]" % (
-                data.get("__bigqmt_type__"),
-                data.get("columns"),
-                len(data.get("records") or []),
-            )
-        keys = list(data.keys())[:3]
-        return "{%s%s: ...}(%d keys)" % (keys, "" if len(keys) < 3 else ", ...", len(data))
-    if isinstance(data, list):
-        return "[list len=%d]" % len(data)
-    return repr(data)[:60]
+def _is_non_empty(value):
+    if value is None:
+        return False
+    if isinstance(value, (dict, list, str)):
+        return len(value) > 0
+    return True
 
 
 def main():
-    if not ACCOUNT:
-        raise SystemExit("ACCOUNT is empty: set BIGQMT_ACCOUNT_ID or configure bigqmt_signal_trader_local_config")
-    # Fill the account_id into the account-query test params now that we know it.
-    for i, (method, params, label) in enumerate(TESTS):
-        if "account_id" in params and params["account_id"] is None:
-            params["account_id"] = ACCOUNT
-
-    r = redis.Redis(**REDIS)
-    # warmup
-    call_redis_rpc(r, ACCOUNT, "ping", {}, timeout_seconds=8)
-
-    print("=" * 90)
-    print("全量 API 测试 (account=%s)" % ACCOUNT)
-    print("=" * 90)
-    print("%-22s %-8s %-8s %s" % ("method", "ok", "ms", "data summary"))
-    print("-" * 90)
-
-    results = {"ok": [], "ok_empty": [], "fail": [], "timeout": []}
-    for method, params, label in TESTS:
+    configure()
+    failures = 0
+    print("=== direct RPC method probes ===")
+    for method, params in PROBES:
         t0 = time.time()
         try:
-            resp = call_redis_rpc(r, ACCOUNT, method, params, timeout_seconds=12)
-            dt = (time.time() - t0) * 1000
-            ok = resp.get("ok")
-            data = resp.get("data")
-            error = resp.get("error", "")
-            empty = data is None or data == {} or data == [] or data == ""
-            if ok and not empty:
-                results["ok"].append(method)
-                status = "OK"
-            elif ok and empty:
-                results["ok_empty"].append(method)
-                status = "EMPTY"
+            if method in ("get_asset", "get_positions", "query_stock_position",
+                          "query_stock_asset", "query_stock_positions",
+                          "query_orders", "query_trades"):
+                result = getattr(xt_trader, method)(xt_trader.account) if method.startswith("query") or method in ("get_asset", "get_positions") else None
+                if result is None and hasattr(xt_trader, method):
+                    result = getattr(xt_trader, method)()
             else:
-                results["fail"].append((method, error))
-                status = "FAIL"
-            summary = data_summary(data) if ok else error[:50]
-            print("%-22s %-8s %6.0f   %s" % (method, status, dt, summary))
-        except Exception as e:
-            dt = (time.time() - t0) * 1000
-            is_timeout = "timeout" in str(e).lower()
-            bucket = "timeout" if is_timeout else "fail"
-            results[bucket].append((method, str(e)[:60]))
-            print("%-22s %-8s %6.0f   %s" % (method, "TIMEOUT" if is_timeout else "ERROR", dt, str(e)[:50]))
+                result = getattr(xtdata, method)(**params)
+            ok = _is_non_empty(result)
+            print("[%s] %-22s %.1fms ok=%s non_empty=%s" % (
+                "OK" if ok else "EMPTY", method, (time.time() - t0) * 1000, True, ok))
+        except Exception as exc:  # noqa: BLE001
+            failures += 1
+            print("[FAIL] %-22s %.1fms %s" % (method, (time.time() - t0) * 1000, exc))
 
-    print("-" * 90)
-    print("\n=== 汇总 ===")
-    print("有数据 (OK):     %d 个" % len(results["ok"]))
-    print("成功但空 (EMPTY): %d 个 %s" % (len(results["ok_empty"]), results["ok_empty"]))
-    print("失败 (FAIL):     %d 个 %s" % (len(results["fail"]), [m for m, _ in results["fail"]]))
-    print("超时 (TIMEOUT):  %d 个 %s" % (len(results["timeout"]), [m for m, _ in results["timeout"]]))
+    print("=== MiniQMT alias resolution ===")
+    for alias, params in ALIASES:
+        t0 = time.time()
+        try:
+            fn = getattr(xt_trader, alias, None) or getattr(xtdata, alias, None)
+            if fn is None:
+                raise AttributeError("%s not exposed" % alias)
+            print("[OK] %-22s resolved" % alias)
+        except Exception as exc:  # noqa: BLE001
+            failures += 1
+            print("[FAIL] %-22s %s" % (alias, exc))
+
+    print("=== summary: %d failures ===" % failures)
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

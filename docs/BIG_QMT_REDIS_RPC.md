@@ -63,24 +63,24 @@ RPC 服务端会把以下 MiniQMT 常用方法名映射到大 QMT 适配器：
 
 ```powershell
 $srcPkg = '<REPO_ROOT>\src\bigqmt_signal_trader'
-$dstPkg = '<QMT_PYTHON_DIR>\bigqmt_signal_trader'
+$dstPkg = 'D:\guoseniquant\python\bigqmt_signal_trader'
 Get-ChildItem -LiteralPath $srcPkg -Force | ForEach-Object {
   Copy-Item -LiteralPath $_.FullName -Destination $dstPkg -Recurse -Force
 }
 
 Copy-Item -LiteralPath '<REPO_ROOT>\src\bigqmt_signal_trader_strategy.py' `
-  -Destination '<QMT_PYTHON_DIR>\bigqmt_signal_trader_strategy.py' `
+  -Destination 'D:\guoseniquant\python\bigqmt_signal_trader_strategy.py' `
   -Force
 
 Copy-Item -LiteralPath '<REPO_ROOT>\src\bigqmt_signal_trader_redis_rpc_runtime.py' `
-  -Destination '<QMT_PYTHON_DIR>\bigqmt_signal_trader_redis_rpc_runtime.py' `
+  -Destination 'D:\guoseniquant\python\bigqmt_signal_trader_redis_rpc_runtime.py' `
   -Force
 ```
 
 QMT 本地私有配置文件：
 
 ```python
-# <QMT_PYTHON_DIR>\bigqmt_signal_trader_local_config.py
+# D:\guoseniquant\python\bigqmt_signal_trader_local_config.py
 # coding: utf-8
 
 BIGQMT_ACCOUNT_ID = "你的资金账号"
@@ -117,7 +117,7 @@ import importlib
 
 _qmt_path = os.path.dirname(os.path.abspath(globals().get('__file__', '')))
 if not _qmt_path:
-    _qmt_path = 'D:/YOUR_QMT_PYTHON_DIR'
+    _qmt_path = 'D:/guoseniquant/python'
 if _qmt_path not in sys.path:
     sys.path.insert(0, _qmt_path)
 
@@ -406,4 +406,5 @@ python -B -m unittest discover -s tests\bigqmt_signal_trader
 Ran 68 tests
 OK
 ```
+
 
