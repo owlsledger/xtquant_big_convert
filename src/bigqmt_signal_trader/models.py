@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 
 
 class SignalAction(str, Enum):
+    """信号action，继承自 str, Enum。
+    """
     BUY = "BUY"
     SELL = "SELL"
     CLEAR = "CLEAR"
@@ -13,6 +15,8 @@ class SignalAction(str, Enum):
 
 
 class SignalStatus(str, Enum):
+    """信号status，继承自 str, Enum。
+    """
     PENDING = "PENDING"
     CLAIMED = "CLAIMED"
     SUBMITTED = "SUBMITTED"
@@ -22,6 +26,15 @@ class SignalStatus(str, Enum):
 
 
 def parse_datetime(value: Any, field_name: str) -> _dt.datetime:
+    """解析datetime。
+    
+    Args:
+        value: Any — 值
+        field_name: str — fieldname
+    
+    Returns:
+        _dt.datetime — dt.datetime。
+    """
     if isinstance(value, _dt.datetime):
         return value
     if isinstance(value, str) and value:
@@ -33,18 +46,42 @@ def parse_datetime(value: Any, field_name: str) -> _dt.datetime:
 
 
 def _optional_int(value: Any) -> Optional[int]:
+    """optionalint。
+    
+    Args:
+        value: Any — 值
+    
+    Returns:
+        Optional[int] — 可能为 None 的结果。
+    """
     if value is None or value == "":
         return None
     return int(value)
 
 
 def _optional_float(value: Any) -> Optional[float]:
+    """optionalfloat。
+    
+    Args:
+        value: Any — 值
+    
+    Returns:
+        Optional[float] — 可能为 None 的结果。
+    """
     if value is None or value == "":
         return None
     return float(value)
 
 
 def _bool_value(value: Any) -> bool:
+    """bool值。
+    
+    Args:
+        value: Any — 值
+    
+    Returns:
+        bool — 布尔值，True 表示成功/是，False 表示失败/否。
+    """
     if isinstance(value, bool):
         return value
     if value is None or value == "":
@@ -56,6 +93,8 @@ def _bool_value(value: Any) -> bool:
 
 
 class TradeSignal:
+    """成交信号，提供 from_dict, is_expired 等方法。
+    """
     def __init__(
         self,
         signal_id,
@@ -81,6 +120,32 @@ class TradeSignal:
         status=SignalStatus.PENDING,
         raw_payload=None,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            signal_id: 信号id
+            account_id: 账号ID
+            action: action
+            created_at: createdat
+            expire_at: expireat
+            schema_version: schemaversion
+            stock_code: 股票代码
+            stock_name: 股票name
+            amount: amount
+            percentage: percentage
+            price_type: pricetype
+            price: price
+            strategy_name: 策略name
+            remark: remark
+            source: source
+            source_type: sourcetype
+            force: 强制模式
+            bypass_stop_buy: bypassstopbuy
+            bypass_stop_sell: bypassstopsell
+            bypass_daily_limit: bypass日线limit
+            status: status
+            raw_payload: raw载荷
+        """
         self.signal_id = signal_id
         self.account_id = account_id
         self.action = action
@@ -106,6 +171,14 @@ class TradeSignal:
 
     @classmethod
     def from_dict(cls, payload: Dict[str, Any]) -> "TradeSignal":
+        """从dict转换为当前类型。
+        
+        Args:
+            payload: Dict[str, Any] — 载荷
+        
+        Returns:
+            TradeSignal — 成交信号。
+        """
         required = ("signal_id", "account_id", "action", "created_at", "expire_at", "schema_version")
         for field_name in required:
             if payload.get(field_name) in (None, ""):
@@ -158,11 +231,30 @@ class TradeSignal:
         )
 
     def is_expired(self, now: _dt.datetime) -> bool:
+        """判断是否expired。
+        
+        Args:
+            now: _dt.datetime — now
+        
+        Returns:
+            bool — 布尔值，True 表示成功/是，False 表示失败/否。
+        """
         return now > self.expire_at
 
 
 class PositionSnapshot:
+    """持仓snapshot。
+    """
     def __init__(self, stock_code, volume, available, cost=0.0, stock_name=""):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            stock_code: 股票代码
+            volume: volume
+            available: available
+            cost: cost
+            stock_name: 股票name
+        """
         self.stock_code = stock_code
         self.volume = volume
         self.available = available
@@ -171,14 +263,34 @@ class PositionSnapshot:
 
 
 class AssetSnapshot:
+    """资产snapshot。
+    """
     def __init__(self, account_id, cash=None, total_asset=None):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            account_id: 账号ID
+            cash: cash
+            total_asset: total资产
+        """
         self.account_id = account_id
         self.cash = cash
         self.total_asset = total_asset
 
 
 class AccountSnapshot:
+    """accountsnapshot。
+    """
     def __init__(self, account_id, asset, positions, reason, updated_at):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            account_id: 账号ID
+            asset: 资产
+            positions: positions
+            reason: reason
+            updated_at: updatedat
+        """
         self.account_id = account_id
         self.asset = asset
         self.positions = positions
@@ -187,6 +299,8 @@ class AccountSnapshot:
 
 
 class OrderRequest:
+    """Order请求。
+    """
     def __init__(
         self,
         signal_id,
@@ -199,6 +313,19 @@ class OrderRequest:
         strategy_name,
         remark="",
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            signal_id: 信号id
+            account_id: 账号ID
+            action: action
+            stock_code: 股票代码
+            volume: volume
+            price: price
+            price_type: pricetype
+            strategy_name: 策略name
+            remark: remark
+        """
         self.signal_id = signal_id
         self.account_id = account_id
         self.action = action
@@ -211,7 +338,17 @@ class OrderRequest:
 
 
 class OrderSubmitResult:
+    """订单submitresult。
+    """
     def __init__(self, status, user_order_id, order_sys_id=None, message=""):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            status: status
+            user_order_id: user订单id
+            order_sys_id: 订单sysid
+            message: message
+        """
         self.status = status
         self.user_order_id = user_order_id
         self.order_sys_id = order_sys_id
@@ -219,6 +356,8 @@ class OrderSubmitResult:
 
 
 class OrderSnapshot:
+    """订单snapshot。
+    """
     def __init__(
         self,
         order_sys_id,
@@ -232,6 +371,20 @@ class OrderSnapshot:
         strategy_name="",
         remark="",
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            order_sys_id: 订单sysid
+            user_order_id: user订单id
+            stock_code: 股票代码
+            action: action
+            volume: volume
+            traded_volume: tradedvolume
+            status: status
+            price: price
+            strategy_name: 策略name
+            remark: remark
+        """
         self.order_sys_id = order_sys_id
         self.user_order_id = user_order_id
         self.stock_code = stock_code
@@ -245,7 +398,20 @@ class OrderSnapshot:
 
 
 class TradeSnapshot:
+    """成交snapshot。
+    """
     def __init__(self, trade_id, order_sys_id, stock_code, action, volume, price, traded_at=""):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            trade_id: 成交id
+            order_sys_id: 订单sysid
+            stock_code: 股票代码
+            action: action
+            volume: volume
+            price: price
+            traded_at: tradedat
+        """
         self.trade_id = trade_id
         self.order_sys_id = order_sys_id
         self.stock_code = stock_code
@@ -256,12 +422,28 @@ class TradeSnapshot:
 
 
 class OrderRef:
+    """订单ref。
+    """
     def __init__(self, order_sys_id, user_order_id=""):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            order_sys_id: 订单sysid
+            user_order_id: user订单id
+        """
         self.order_sys_id = order_sys_id
         self.user_order_id = user_order_id
 
 
 class CancelResult:
+    """cancelresult。
+    """
     def __init__(self, success, message=""):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            success: 是否成功
+            message: message
+        """
         self.success = success
         self.message = message

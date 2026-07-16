@@ -4,11 +4,27 @@ from .code_utils import normalize_stock_code
 
 
 def _price_precision(stock_code):
+    """priceprecision。
+    
+    Args:
+        stock_code: 股票代码
+    
+    Returns:
+         — 处理结果。
+    """
     pure = normalize_stock_code(stock_code).split(".")[0]
     return 3 if pure.startswith(("15", "16", "51", "52")) else 2
 
 
 def _second_level(values):
+    """secondlevel。
+    
+    Args:
+        values: values
+    
+    Returns:
+         — 处理结果。
+    """
     if isinstance(values, (list, tuple)) and len(values) > 1:
         try:
             value = float(values[1])
@@ -19,6 +35,18 @@ def _second_level(values):
 
 
 def build_order_price(market_data, stock_code, action, price_type="AUTO_LIMIT", fixed_price=None):
+    """构建订单price。
+    
+    Args:
+        market_data: 市场data
+        stock_code: 股票代码
+        action: action
+        price_type: pricetype
+        fixed_price: fixedprice
+    
+    Returns:
+         — 处理结果。
+    """
     if str(price_type or "AUTO_LIMIT").upper() == "FIX_PRICE":
         if fixed_price is None:
             raise ValueError("fixed_price is required when price_type is FIX_PRICE")

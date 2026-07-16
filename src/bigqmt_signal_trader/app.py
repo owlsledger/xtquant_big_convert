@@ -8,6 +8,8 @@ from .risk_guard import validate_signal
 
 
 class SignalTradingApp:
+    """信号tradingapp，提供 tick, on_init, on_order_event, on_trade_event, sync_positions 等方法。
+    """
     def __init__(
         self,
         account_id,
@@ -20,6 +22,19 @@ class SignalTradingApp:
         consumer_id="bigqmt-signal-trader",
         fetch_limit=20,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            account_id: 账号ID
+            signal_source: 信号source
+            market_data: 市场data
+            position_provider: 持仓provider
+            order_gateway: 订单gateway
+            position_sync_sink: 持仓syncsink
+            state_store: statestore
+            consumer_id: consumerid
+            fetch_limit: fetchlimit
+        """
         self.account_id = account_id
         self.signal_source = signal_source
         self.market_data = market_data
@@ -31,6 +46,11 @@ class SignalTradingApp:
         self.fetch_limit = int(fetch_limit)
 
     def tick(self, now=None):
+        """tick。
+        
+        Args:
+            now: now
+        """
         now = now or _dt.datetime.now()
         signals = self.signal_source.fetch(self.account_id, self.fetch_limit)
         positions = self.position_provider.get_positions(self.account_id)
@@ -47,6 +67,13 @@ class SignalTradingApp:
         self.sync_positions("tick", now=now)
 
     def _handle_signal(self, signal, now, positions):
+        """handle信号。
+        
+        Args:
+            signal: 信号
+            now: now
+            positions: positions
+        """
         decision = validate_signal(signal, now, positions)
         if not decision.allowed:
             self.state_store.mark_finished(signal.signal_id, "SKIPPED", decision.reason)
@@ -76,15 +103,42 @@ class SignalTradingApp:
         self.signal_source.ack(signal)
 
     def on_init(self, runtime):
+        """oninit。
+        
+        Args:
+            runtime: runtime
+        
+        Returns:
+             — 处理结果。
+        """
         return None
 
     def on_order_event(self, event):
+        """on订单event。
+        
+        Args:
+            event: event
+        
+        Returns:
+             — 处理结果。
+        """
         return None
 
     def on_trade_event(self, event):
+        """on成交event。
+        
+        Args:
+            event: event
+        """
         self.sync_positions("trade_event")
 
     def sync_positions(self, reason, now=None):
+        """同步positions。
+        
+        Args:
+            reason: reason
+            now: now
+        """
         now = now or _dt.datetime.now()
         asset = self.position_provider.get_asset(self.account_id)
         positions = self.position_provider.get_positions(self.account_id)

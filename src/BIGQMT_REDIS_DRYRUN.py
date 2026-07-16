@@ -8,7 +8,12 @@ def _known_qmt_python_dir():
     # Best-effort fallback only; the real path comes from __file__ below.
     # The default QMT install dir is pure ASCII, so inline it directly.
     # Update this if you relocate the QMT install.
-    return r"D:\guoseniquant\python"
+    """knownqmtpythondir。
+    
+    Returns:
+         — 处理结果。
+    """
+    return r"D:\guojinqmt\python"
 
 
 _qmt_paths = []
@@ -28,6 +33,11 @@ except Exception:
 
 
 def _fallback_account_id():
+    """fallbackaccountid。
+    
+    Returns:
+         — 处理结果。
+    """
     for _name in ("BIGQMT_ACCOUNT_ID", "account", "account_id", "accountID"):
         _value = globals().get(_name)
         if _value:
@@ -66,6 +76,11 @@ import bigqmt_signal_trader_redis_rpc_runtime as _runtime
 _runtime = importlib.reload(_runtime)
 
 def _load_local_config():
+    """loadlocal配置。
+    
+    Returns:
+         — 处理结果。
+    """
     import bigqmt_signal_trader_local_config as _local_config
     return importlib.reload(_local_config)
 

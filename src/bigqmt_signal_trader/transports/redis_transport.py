@@ -40,6 +40,16 @@ RESPONSE_KEY_TEMPLATE = "bigqmt:rpc:resp:{account_id}:{request_id}"
 
 
 def _format(template, account_id, request_id):
+    """format。
+    
+    Args:
+        template: 模板
+        account_id: 账号ID
+        request_id: 请求id
+    
+    Returns:
+         — 处理结果。
+    """
     if not template:
         return ""
     return template.format(account_id=account_id, request_id=request_id)
@@ -77,6 +87,22 @@ class RedisTransport(RpcTransport):
         debug_log_limit=0,
         print_prefix="[bigqmt_rpc]",
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            redis_client: redisclient
+            account_id: 账号ID
+            response_redis_client: 响应redisclient
+            request_channel_template: 请求channel模板
+            request_queue_template: 请求队列模板
+            response_channel_template: 响应channel模板
+            response_list_template: 响应list模板
+            response_key_template: 响应键模板
+            response_ttl_seconds: 响应ttlseconds
+            queue_poll_interval_seconds: 队列poll间隔seconds
+            debug_log_limit: 调试模式loglimit
+            print_prefix: print前缀
+        """
         super(RedisTransport, self).__init__(account_id=account_id, print_prefix=print_prefix)
         self.listen_redis = redis_client
         self.redis = response_redis_client or redis_client
@@ -101,13 +127,28 @@ class RedisTransport(RpcTransport):
     # -- properties mirroring the original service -------------------------
     @property
     def request_channel(self):
+        """获取请求channel。
+        
+        Returns:
+             — 处理结果。
+        """
         return self.request_channel_template.format(account_id=self.account_id)
 
     @property
     def request_queue(self):
+        """获取请求队列。
+        
+        Returns:
+             — 处理结果。
+        """
         return self.request_queue_template.format(account_id=self.account_id)
 
     def _response_clients(self):
+        """响应clients。
+        
+        Returns:
+             — 处理结果。
+        """
         clients = [self.redis]
         if self.listen_redis is not self.redis:
             clients.append(self.listen_redis)
@@ -165,6 +206,8 @@ class RedisTransport(RpcTransport):
         )
 
     def _listen_loop(self):
+        """listenloop。
+        """
         while self._running:
             try:
                 pubsub = self.listen_redis.pubsub(ignore_subscribe_messages=True)
@@ -195,6 +238,8 @@ class RedisTransport(RpcTransport):
                 self._pubsub = None
 
     def _queue_loop(self):
+        """队列loop。
+        """
         while self._running:
             try:
                 if self.debug_log_limit > 0:
@@ -221,6 +266,12 @@ class RedisTransport(RpcTransport):
                 time.sleep(1.0)
 
     def _handle_received_payload(self, raw_payload, source):
+        """handlereceived载荷。
+        
+        Args:
+            raw_payload: raw载荷
+            source: source
+        """
         self._received_count += 1
         if self.on_raw_payload is not None:
             # Service wants to observe/intercept (e.g. debug log + dispatch fork).
@@ -251,6 +302,16 @@ class RedisTransport(RpcTransport):
             self._publish_response_channel(response_channel, payload)
 
     def _write_response_key(self, response_key, ttl_seconds, payload):
+        """write响应键。
+        
+        Args:
+            response_key: 响应键
+            ttl_seconds: ttlseconds
+            payload: 载荷
+        
+        Returns:
+             — 处理结果。
+        """
         first_error = None
         wrote = 0
         for client in self._response_clients():
@@ -268,6 +329,16 @@ class RedisTransport(RpcTransport):
         return wrote
 
     def _push_response_list(self, response_list, ttl_seconds, payload):
+        """push响应list。
+        
+        Args:
+            response_list: 响应list
+            ttl_seconds: ttlseconds
+            payload: 载荷
+        
+        Returns:
+             — 处理结果。
+        """
         first_error = None
         pushed = 0
         for client in self._response_clients():
@@ -284,6 +355,15 @@ class RedisTransport(RpcTransport):
         return pushed
 
     def _publish_response_channel(self, response_channel, payload):
+        """publish响应channel。
+        
+        Args:
+            response_channel: 响应channel
+            payload: 载荷
+        
+        Returns:
+             — 处理结果。
+        """
         first_error = None
         receivers = 0
         published = 0
@@ -303,6 +383,14 @@ class RedisTransport(RpcTransport):
 
     # -- non-background drain helpers (used by the strategy adjust thread) -
     def drain_request_queue(self, max_items=20):
+        """drain请求队列。
+        
+        Args:
+            max_items: maxitems
+        
+        Returns:
+             — 处理结果。
+        """
         processed = 0
         for _ in range(int(max_items)):
             item = self.listen_redis.lpop(self.request_queue)
@@ -316,6 +404,8 @@ class RedisTransport(RpcTransport):
         return processed
 
     def stop(self):
+        """stop。
+        """
         super(RedisTransport, self).stop()
         pubsub = self._pubsub
         if pubsub is not None:

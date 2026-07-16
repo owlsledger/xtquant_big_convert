@@ -56,20 +56,40 @@ class CompatObject:
     """Small attribute object matching xtquant's object-style returns."""
 
     def __init__(self, **kwargs):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            kwargs: kwargs
+        """
         self.__dict__.update(kwargs)
 
     def __repr__(self):
+        """返回实例的官方字符串表示形式，包含关键状态信息。
+        
+        Returns:
+             — 处理结果。
+        """
         items = ", ".join("%s=%r" % (key, value) for key, value in sorted(self.__dict__.items()))
         return "%s(%s)" % (self.__class__.__name__, items)
 
 
 class StockAccount:
+    """Stock账户。
+    """
     def __init__(self, account_id, account_type="STOCK"):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            account_id: 账号ID
+            account_type: 账号类型
+        """
         self.account_id = str(account_id or "")
         self.account_type = str(account_type or "STOCK")
 
 
 class XtQuantTraderCallback:
+    """xtquanttrader回调函数，提供 on_disconnected, on_stock_order, on_stock_trade, on_order_error, on_cancel_error 等方法。
+    """
     def on_disconnected(self):
         pass
 
@@ -93,6 +113,15 @@ class XtQuantTraderCallback:
 
 
 def _env_int(name, default):
+    """envint。
+    
+    Args:
+        name: name
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     value = os.environ.get(name)
     if value in (None, ""):
         return default
@@ -100,6 +129,15 @@ def _env_int(name, default):
 
 
 def _env_float(name, default):
+    """envfloat。
+    
+    Args:
+        name: name
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     value = os.environ.get(name)
     if value in (None, ""):
         return default
@@ -107,6 +145,15 @@ def _env_float(name, default):
 
 
 def _env_bool(name, default=False):
+    """envbool。
+    
+    Args:
+        name: name
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     value = os.environ.get(name)
     if value in (None, ""):
         return default
@@ -114,6 +161,15 @@ def _env_bool(name, default=False):
 
 
 def _bool_value(value, default=False):
+    """bool值。
+    
+    Args:
+        value: 值
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     if value is None or value == "":
         return default
     if isinstance(value, bool):
@@ -122,6 +178,14 @@ def _bool_value(value, default=False):
 
 
 def _import_optional_module(module_name):
+    """importoptionalmodule。
+    
+    Args:
+        module_name: modulename
+    
+    Returns:
+         — 处理结果。
+    """
     try:
         return importlib.import_module(module_name)
     except ModuleNotFoundError as exc:
@@ -173,6 +237,15 @@ def load_client_config(module_name=None):
 
 
 def _account_id(account, fallback=""):
+    """accountid。
+    
+    Args:
+        account: account
+        fallback: fallback
+    
+    Returns:
+         — 处理结果。
+    """
     if account is None:
         return str(fallback or "")
     if isinstance(account, str):
@@ -187,6 +260,14 @@ def _account_id(account, fallback=""):
 
 
 def _action_to_order_type(action):
+    """actionto订单type。
+    
+    Args:
+        action: action
+    
+    Returns:
+         — 处理结果。
+    """
     text = str(action or "").upper()
     if text in ("BUY", str(STOCK_BUY)):
         return STOCK_BUY
@@ -196,6 +277,15 @@ def _action_to_order_type(action):
 
 
 def _safe_int(value, default=0):
+    """safeint。
+    
+    Args:
+        value: 值
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     try:
         return int(value)
     except (TypeError, ValueError):
@@ -203,6 +293,15 @@ def _safe_int(value, default=0):
 
 
 def _safe_float(value, default=0.0):
+    """safefloat。
+    
+    Args:
+        value: 值
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     try:
         return float(value)
     except (TypeError, ValueError):
@@ -210,6 +309,14 @@ def _safe_float(value, default=0.0):
 
 
 def _as_list(value):
+    """aslist。
+    
+    Args:
+        value: 值
+    
+    Returns:
+         — 处理结果。
+    """
     if value is None:
         return []
     if isinstance(value, dict):
@@ -220,6 +327,14 @@ def _as_list(value):
 
 
 def _restore_jsonable(value):
+    """restorejsonable。
+    
+    Args:
+        value: 值
+    
+    Returns:
+         — 处理结果。
+    """
     if isinstance(value, dict):
         marker = value.get("__bigqmt_type__")
         if marker == "DataFrame":
@@ -243,6 +358,14 @@ def _restore_jsonable(value):
 
 
 def _normalize_code_for_filter(code):
+    """normalizecodeforfilter。
+    
+    Args:
+        code: code
+    
+    Returns:
+         — 处理结果。
+    """
     text = str(code or "").strip().upper()
     if "." not in text:
         return text
@@ -250,6 +373,14 @@ def _normalize_code_for_filter(code):
 
 
 def _is_hs_a_share(code):
+    """ishsashare。
+    
+    Args:
+        code: code
+    
+    Returns:
+         — 处理结果。
+    """
     text = str(code or "").strip().upper()
     pure = _normalize_code_for_filter(text)
     if not (len(pure) == 6 and pure.isdigit()):
@@ -264,6 +395,8 @@ def _is_hs_a_share(code):
 
 
 class BigQmtRpcClient:
+    """BigQmtRpc客户端，提供 call, publish_event, save_quote_subscription 等方法。
+    """
     def __init__(
         self,
         account_id=None,
@@ -272,6 +405,15 @@ class BigQmtRpcClient:
         timeout_seconds=None,
         transport=None,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            account_id: 账号ID
+            redis_client: redisclient
+            redis_config: redis配置
+            timeout_seconds: 超时(秒)seconds
+            transport: transport
+        """
         client_config = load_client_config()
         config_redis = dict(client_config.get("redis_config") or {})
         redis_config = dict(redis_config or {})
@@ -298,7 +440,7 @@ class BigQmtRpcClient:
             if timeout_seconds is not None
             else config_timeout
             if config_timeout is not None
-            else _env_float("BIGQMT_RPC_TIMEOUT_SECONDS", 6.0)
+            else _env_float("BIGQMT_RPC_TIMEOUT_SECONDS", 3600.0)
         )
         full_tick_cache_config = dict(client_config.get("full_tick_cache_config") or {})
         self.full_tick_cache_config = {
@@ -366,6 +508,11 @@ class BigQmtRpcClient:
         self._transport_instance = None  # lazily built by _transport()
 
     def _redis(self):
+        """redis。
+        
+        Returns:
+             — 处理结果。
+        """
         if self.redis_client is None:
             import redis
 
@@ -378,6 +525,11 @@ class BigQmtRpcClient:
         return self.redis_client
 
     def _transport(self):
+        """transport。
+        
+        Returns:
+             — 处理结果。
+        """
         if self._transport_instance is None:
             if self.transport_name in ("redis", "", "default"):
                 # Legacy path: call_redis_rpc builds its own request envelope.
@@ -404,6 +556,17 @@ class BigQmtRpcClient:
         return self._transport_instance
 
     def call(self, method, params=None, account_id=None, timeout_seconds=None):
+        """call。
+        
+        Args:
+            method: method
+            params: params
+            account_id: 账号ID
+            timeout_seconds: 超时(秒)seconds
+        
+        Returns:
+             — 处理结果。
+        """
         target_account = str(account_id or self.account_id or "")
         if not target_account:
             raise ValueError("Big QMT account_id is required")
@@ -434,6 +597,16 @@ class BigQmtRpcClient:
         return _restore_jsonable(response.get("data"))
 
     def publish_event(self, event_type, payload, stream_template="bigqmt:quote_events:{account_id}"):
+        """publishevent。
+        
+        Args:
+            event_type: eventtype
+            payload: 载荷
+            stream_template: 流模板
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = str(self.account_id or "")
         event = {
             "event_type": str(event_type),
@@ -455,6 +628,13 @@ class BigQmtRpcClient:
         return event
 
     def save_quote_subscription(self, seq, payload, active=True):
+        """保存quotesubscription。
+        
+        Args:
+            seq: seq
+            payload: 载荷
+            active: active
+        """
         account_id = str(self.account_id or "")
         key = "bigqmt:quote_subscriptions:%s" % account_id
         redis_client = self._redis()
@@ -472,16 +652,33 @@ class BigQmtRpcClient:
 
 
 class BigQmtXtData:
+    """bigqmtxtdata，提供 get_full_tick, get_instrument_detail, get_instrumentdetail, get_instrument_type, get_stock_list_in_sector 等方法。
+    """
     def __init__(self, client):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            client: client
+        """
         self.client = client
         self._subscribe_seq = int(time.time() * 1000)
         self._cache_obj = None
 
     def _next_seq(self):
+        """nextseq。
+        
+        Returns:
+             — 处理结果。
+        """
         self._subscribe_seq += 1
         return self._subscribe_seq
 
     def _local_cache(self):
+        """localcache。
+        
+        Returns:
+             — 处理结果。
+        """
         cfg = dict(getattr(self.client, "local_cache_config", {}) or {})
         if not _bool_value(cfg.get("enabled"), True):
             return None
@@ -490,9 +687,26 @@ class BigQmtXtData:
         return self._cache_obj
 
     def _call(self, method, **params):
+        """call。
+        
+        Args:
+            method: method
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self.client.call(method, params)
 
     def get_full_tick(self, code_list):
+        """获取fulltick。
+        
+        Args:
+            code_list: codelist
+        
+        Returns:
+             — 处理结果。
+        """
         codes = list(code_list or [])
         if not codes:
             return {}
@@ -529,15 +743,49 @@ class BigQmtXtData:
         return self.client.call("get_full_tick", {"codes": codes}, timeout_seconds=timeout_seconds) or {}
 
     def get_instrument_detail(self, stock_code):
+        """获取instrumentdetail。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self.client.call("get_instrument_detail", {"code": stock_code}) or {}
 
     def get_instrumentdetail(self, stock_code):
+        """获取instrumentdetail。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self.get_instrument_detail(stock_code)
 
     def get_instrument_type(self, stock_code, variety_list=None):
+        """获取instrumenttype。
+        
+        Args:
+            stock_code: 股票代码
+            variety_list: varietylist
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_instrument_type", code=stock_code, variety_list=variety_list)
 
     def get_stock_list_in_sector(self, sector_name, real_timetag=-1):
+        """获取股票listinsector。
+        
+        Args:
+            sector_name: sectorname
+            real_timetag: realtimetag
+        
+        Returns:
+             — 处理结果。
+        """
         name = str(sector_name or "")
         try:
             return self._call("get_stock_list_in_sector", sector_name=sector_name, real_timetag=real_timetag) or []
@@ -559,6 +807,21 @@ class BigQmtXtData:
         dividend_type="none",
         fill_data=True,
     ):
+        """获取市场data。
+        
+        Args:
+            field_list: fieldlist
+            stock_list: 股票list
+            period: period
+            start_time: starttime
+            end_time: endtime
+            count: count
+            dividend_type: 除权除息type
+            fill_data: filldata
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_market_data",
             field_list=list(field_list or []),
@@ -585,6 +848,21 @@ class BigQmtXtData:
         # Live pull over RPC. Cache-through: whatever we fetch is written to the
         # local cache (keyed by dividend_type), so it stays the latest — important
         # for 前复权 (front-adjusted) data, whose history re-scales on each dividend.
+        """获取市场dataex。
+        
+        Args:
+            field_list: fieldlist
+            stock_list: 股票list
+            period: period
+            start_time: starttime
+            end_time: endtime
+            count: count
+            dividend_type: 除权除息type
+            fill_data: filldata
+        
+        Returns:
+             — 处理结果。
+        """
         data = self._call(
             "get_market_data_ex",
             field_list=list(field_list or []),
@@ -658,6 +936,15 @@ class BigQmtXtData:
 
     @staticmethod
     def _select_fields(df, fields):
+        """selectfields。
+        
+        Args:
+            df: df
+            fields: fields
+        
+        Returns:
+             — 处理结果。
+        """
         if not fields:
             return df
         try:
@@ -685,6 +972,19 @@ class BigQmtXtData:
         return out
 
     def subscribe_quote(self, stock_code, period="1d", start_time="", end_time="", count=0, callback=None):
+        """订阅quote。
+        
+        Args:
+            stock_code: 股票代码
+            period: period
+            start_time: starttime
+            end_time: endtime
+            count: count
+            callback: 回调函数
+        
+        Returns:
+             — 处理结果。
+        """
         seq = self._next_seq()
         payload = {
             "seq": seq,
@@ -715,6 +1015,20 @@ class BigQmtXtData:
         return seq
 
     def subscribe_quote2(self, stock_code, period="1d", start_time="", end_time="", count=0, dividend_type=None, callback=None):
+        """订阅quote2。
+        
+        Args:
+            stock_code: 股票代码
+            period: period
+            start_time: starttime
+            end_time: endtime
+            count: count
+            dividend_type: 除权除息type
+            callback: 回调函数
+        
+        Returns:
+             — 处理结果。
+        """
         return self.subscribe_quote(
             stock_code=stock_code,
             period=period,
@@ -725,6 +1039,15 @@ class BigQmtXtData:
         )
 
     def subscribe_whole_quote(self, code_list, callback=None):
+        """订阅wholequote。
+        
+        Args:
+            code_list: codelist
+            callback: 回调函数
+        
+        Returns:
+             — 处理结果。
+        """
         seq = self._next_seq()
         payload = {"seq": seq, "code_list": list(code_list or []), "period": "full_tick"}
         self.client.save_quote_subscription(seq, payload, active=True)
@@ -734,16 +1057,36 @@ class BigQmtXtData:
         return seq
 
     def unsubscribe_quote(self, seq):
+        """unsubscribequote。
+        
+        Args:
+            seq: seq
+        
+        Returns:
+             — 处理结果。
+        """
         payload = {"seq": seq}
         self.client.save_quote_subscription(seq, payload, active=False)
         self.client.publish_event("unsubscribe_quote", payload)
         return 0
 
     def run(self):
+        """run。
+        """
         while True:
             time.sleep(3600)
 
     def get_divid_factors(self, stock_code, start_time="", end_time=""):
+        """获取dividfactors。
+        
+        Args:
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_divid_factors", stock_code=stock_code, start_time=start_time, end_time=end_time)
 
     def download_history_data2(self, stock_list, period, start_time="", end_time="", callback=None, incrementally=None, dividend_type="none", chunk_size=None):
@@ -787,6 +1130,19 @@ class BigQmtXtData:
         return {"finished": finished, "total": total}
 
     def download_history_data(self, stock_code, period, start_time="", end_time="", incrementally=None, dividend_type="none"):
+        """downloadhistorydata。
+        
+        Args:
+            stock_code: 股票代码
+            period: period
+            start_time: starttime
+            end_time: endtime
+            incrementally: incrementally
+            dividend_type: 除权除息type
+        
+        Returns:
+             — 处理结果。
+        """
         return self.download_history_data2([stock_code], period, start_time, end_time, dividend_type=dividend_type)
 
     def local_cache_stats(self):
@@ -795,33 +1151,118 @@ class BigQmtXtData:
         return cache.stats() if cache is not None else (0, [])
 
     def get_trading_dates(self, market, start_time="", end_time="", count=-1):
+        """获取tradingdates。
+        
+        Args:
+            market: 市场
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_trading_dates", market=market, start_time=start_time, end_time=end_time, count=count)
 
     def get_holidays(self):
+        """获取holidays。
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_holidays")
 
     def download_holiday_data(self, incrementally=True):
+        """downloadholidaydata。
+        
+        Args:
+            incrementally: incrementally
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("download_holiday_data", incrementally=incrementally)
 
     def get_ipo_info(self, start_time="", end_time=""):
+        """获取ipo信息。
+        
+        Args:
+            start_time: starttime
+            end_time: endtime
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_ipo_info", start_time=start_time, end_time=end_time)
 
     def get_etf_info(self):
+        """获取etf信息。
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_etf_info")
 
     def download_etf_info(self):
+        """downloadetf信息。
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("download_etf_info")
 
     def get_option_list(self, undl_code, dedate, opttype="", isavailavle=False):
+        """获取optionlist。
+        
+        Args:
+            undl_code: undlcode
+            dedate: dedate
+            opttype: opttype
+            isavailavle: isavailavle
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_option_list", undl_code=undl_code, dedate=dedate, opttype=opttype, isavailavle=isavailavle)
 
     def get_his_option_list(self, undl_code, dedate):
+        """获取hisoptionlist。
+        
+        Args:
+            undl_code: undlcode
+            dedate: dedate
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_his_option_list", undl_code=undl_code, dedate=dedate)
 
     def get_his_option_list_batch(self, undl_code, start_time="", end_time=""):
+        """获取hisoptionlistbatch。
+        
+        Args:
+            undl_code: undlcode
+            start_time: starttime
+            end_time: endtime
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_his_option_list_batch", undl_code=undl_code, start_time=start_time, end_time=end_time)
 
     def get_financial_data(self, stock_list, table_list=None, start_time="", end_time="", report_type="report_time"):
+        """获取financialdata。
+        
+        Args:
+            stock_list: 股票list
+            table_list: tablelist
+            start_time: starttime
+            end_time: endtime
+            report_type: reporttype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_financial_data",
             stock_list=list(stock_list or []),
@@ -832,6 +1273,18 @@ class BigQmtXtData:
         )
 
     def download_financial_data(self, stock_list, table_list=None, start_time="", end_time="", incrementally=None):
+        """downloadfinancialdata。
+        
+        Args:
+            stock_list: 股票list
+            table_list: tablelist
+            start_time: starttime
+            end_time: endtime
+            incrementally: incrementally
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "download_financial_data",
             stock_list=list(stock_list or []),
@@ -842,6 +1295,18 @@ class BigQmtXtData:
         )
 
     def download_financial_data2(self, stock_list, table_list=None, start_time="", end_time="", callback=None):
+        """downloadfinancialdata2。
+        
+        Args:
+            stock_list: 股票list
+            table_list: tablelist
+            start_time: starttime
+            end_time: endtime
+            callback: 回调函数
+        
+        Returns:
+             — 处理结果。
+        """
         result = self._call(
             "download_financial_data2",
             stock_list=list(stock_list or []),
@@ -854,18 +1319,59 @@ class BigQmtXtData:
         return result
 
     def get_sector_list(self):
+        """获取sectorlist。
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_sector_list")
 
     def get_sector_info(self, sector_name=""):
+        """获取sector信息。
+        
+        Args:
+            sector_name: sectorname
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_sector_info", sector_name=sector_name)
 
     def get_markets(self):
+        """获取markets。
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_markets")
 
     def get_market_last_trade_date(self, market):
+        """获取市场last成交date。
+        
+        Args:
+            market: 市场
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_market_last_trade_date", market=market)
 
     def call_formula(self, formula_name, stock_code, period, start_time="", end_time="", count=-1, dividend_type=None, extend_param=None):
+        """callformula。
+        
+        Args:
+            formula_name: formulaname
+            stock_code: 股票代码
+            period: period
+            start_time: starttime
+            end_time: endtime
+            count: count
+            dividend_type: 除权除息type
+            extend_param: extendparam
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "call_formula",
             formula_name=formula_name,
@@ -879,6 +1385,22 @@ class BigQmtXtData:
         )
 
     def subscribe_formula(self, formula_name, stock_code, period, start_time="", end_time="", count=-1, dividend_type=None, extend_param=None, callback=None):
+        """订阅formula。
+        
+        Args:
+            formula_name: formulaname
+            stock_code: 股票代码
+            period: period
+            start_time: starttime
+            end_time: endtime
+            count: count
+            dividend_type: 除权除息type
+            extend_param: extendparam
+            callback: 回调函数
+        
+        Returns:
+             — 处理结果。
+        """
         result = self._call(
             "subscribe_formula",
             formula_name=formula_name,
@@ -895,9 +1417,29 @@ class BigQmtXtData:
         return result
 
     def unsubscribe_formula(self, request_id):
+        """unsubscribeformula。
+        
+        Args:
+            request_id: 请求id
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("unsubscribe_formula", request_id=request_id)
 
     def get_formula_result(self, request_id, start_time="", end_time="", count=-1, timeout_second=-1):
+        """获取formularesult。
+        
+        Args:
+            request_id: 请求id
+            start_time: starttime
+            end_time: endtime
+            count: count
+            timeout_second: 超时(秒)second
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_formula_result",
             request_id=request_id,
@@ -908,6 +1450,21 @@ class BigQmtXtData:
         )
 
     def gen_factor_index(self, data_name, formula_name, vars, sector_list, start_time="", end_time="", period="1d", dividend_type="none"):
+        """gen因子索引。
+        
+        Args:
+            data_name: dataname
+            formula_name: formulaname
+            vars: vars
+            sector_list: sectorlist
+            start_time: starttime
+            end_time: endtime
+            period: period
+            dividend_type: 除权除息type
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "gen_factor_index",
             data_name=data_name,
@@ -926,6 +1483,17 @@ class BigQmtXtData:
     # ------------------------------------------------------------------
 
     def get_longhubang(self, stock_list=None, start_time="", end_time="", count=-1):
+        """获取longhubang。
+        
+        Args:
+            stock_list: 股票list
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_longhubang",
             stock_list=list(stock_list or []),
@@ -935,6 +1503,18 @@ class BigQmtXtData:
         )
 
     def get_top10_share_holder(self, stock_list, data_name, start_time, end_time, report_type="report_time"):
+        """获取top10shareholder。
+        
+        Args:
+            stock_list: 股票list
+            data_name: dataname
+            start_time: starttime
+            end_time: endtime
+            report_type: reporttype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_top10_share_holder",
             stock_list=list(stock_list or []),
@@ -945,6 +1525,17 @@ class BigQmtXtData:
         )
 
     def get_holder_num(self, stock_list=None, start_time="", end_time="", report_type="report_time"):
+        """获取holdernum。
+        
+        Args:
+            stock_list: 股票list
+            start_time: starttime
+            end_time: endtime
+            report_type: reporttype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_holder_num",
             stock_list=list(stock_list or []),
@@ -954,6 +1545,16 @@ class BigQmtXtData:
         )
 
     def get_turnover_rate(self, stock_code=None, start_time="19720101", end_time="22010101"):
+        """获取turnoverrate。
+        
+        Args:
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_turnover_rate",
             stock_code=list(stock_code or []),
@@ -962,9 +1563,31 @@ class BigQmtXtData:
         )
 
     def get_industry(self, industry_name):
+        """获取industry。
+        
+        Args:
+            industry_name: industryname
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_industry", industry_name=industry_name)
 
     def bsm_price(self, opt_type, target_price, strike_price, risk_free, sigma, days, dividend=0):
+        """bsmprice。
+        
+        Args:
+            opt_type: opttype
+            target_price: targetprice
+            strike_price: strikeprice
+            risk_free: 风险free
+            sigma: sigma
+            days: days
+            dividend: 除权除息
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "bsm_price",
             opt_type=opt_type,
@@ -977,6 +1600,20 @@ class BigQmtXtData:
         )
 
     def bsm_iv(self, opt_type, target_price, strike_price, option_price, risk_free, days, dividend=0):
+        """bsmiv。
+        
+        Args:
+            opt_type: opttype
+            target_price: targetprice
+            strike_price: strikeprice
+            option_price: optionprice
+            risk_free: 风险free
+            days: days
+            dividend: 除权除息
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "bsm_iv",
             opt_type=opt_type,
@@ -989,18 +1626,63 @@ class BigQmtXtData:
         )
 
     def get_option_iv(self, opt_code):
+        """获取optioniv。
+        
+        Args:
+            opt_code: optcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_option_iv", opt_code=opt_code)
 
     def get_option_detail_data(self, stockcode):
+        """获取optiondetaildata。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_option_detail_data", stockcode=stockcode)
 
     def get_option_undl_data(self, undl_code_ref=""):
+        """获取optionundldata。
+        
+        Args:
+            undl_code_ref: undlcoderef
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_option_undl_data", undl_code_ref=undl_code_ref)
 
     def get_option_undl(self, opt_code):
+        """获取optionundl。
+        
+        Args:
+            opt_code: optcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_option_undl", opt_code=opt_code)
 
     def get_raw_financial_data(self, field_list, stock_list, start_time, end_time, report_type="report_time", data_type="dict"):
+        """获取rawfinancialdata。
+        
+        Args:
+            field_list: fieldlist
+            stock_list: 股票list
+            start_time: starttime
+            end_time: endtime
+            report_type: reporttype
+            data_type: datatype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_raw_financial_data",
             field_list=list(field_list or []),
@@ -1012,6 +1694,17 @@ class BigQmtXtData:
         )
 
     def get_factor_data(self, field_list, stock_list, start_date, end_date):
+        """获取因子data。
+        
+        Args:
+            field_list: fieldlist
+            stock_list: 股票list
+            start_date: 开始日期
+            end_date: 结束日期
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_factor_data",
             field_list=list(field_list or []),
@@ -1021,21 +1714,74 @@ class BigQmtXtData:
         )
 
     def get_north_finance_change(self, period):
+        """获取northfinancechange。
+        
+        Args:
+            period: period
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_north_finance_change", period=period)
 
     def get_hkt_statistics(self, stock_code):
+        """获取hktstatistics。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_hkt_statistics", stock_code=stock_code)
 
     def get_hkt_details(self, stock_code):
+        """获取hktdetails。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_hkt_details", stock_code=stock_code)
 
     def create_sector(self, sector_name, stock_list):
+        """创建sector。
+        
+        Args:
+            sector_name: sectorname
+            stock_list: 股票list
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("create_sector", sector_name=sector_name, stock_list=list(stock_list or []))
 
     def get_stock_name(self, stock):
+        """获取股票name。
+        
+        Args:
+            stock: 股票
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_stock_name", stock=stock)
 
     def get_close_price(self, market, stock_code, real_timetag, period=86400000, divid_type=0):
+        """获取closeprice。
+        
+        Args:
+            market: 市场
+            stock_code: 股票代码
+            real_timetag: realtimetag
+            period: period
+            divid_type: dividtype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call(
             "get_close_price",
             market=market,
@@ -1046,18 +1792,58 @@ class BigQmtXtData:
         )
 
     def get_main_contract(self, code_market):
+        """获取maincontract。
+        
+        Args:
+            code_market: code市场
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_main_contract", code_market=code_market)
 
     def get_his_contract_list(self, market):
+        """获取hiscontractlist。
+        
+        Args:
+            market: 市场
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_his_contract_list", market=market)
 
     def get_date_location(self, date):
+        """获取datelocation。
+        
+        Args:
+            date: date
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_date_location", date=date)
 
     def get_his_st_data(self, stock_code):
+        """获取hisstdata。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_his_st_data", stock_code=stock_code)
 
     def get_his_index_data(self, stock_code):
+        """获取his索引data。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_his_index_data", stock_code=stock_code)
 
     def call_method(self, method, **params):
@@ -1075,14 +1861,50 @@ class BigQmtXtData:
     # ------------------------------------------------------------------
 
     def get_l2_quote(self, field_list=None, stock_code="", start_time="", end_time="", count=-1):
+        """获取l2quote。
+        
+        Args:
+            field_list: fieldlist
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_l2_quote", field_list=list(field_list or []),
                           stock_code=stock_code, start_time=start_time, end_time=end_time, count=count)
 
     def get_l2_order(self, field_list=None, stock_code="", start_time="", end_time="", count=-1):
+        """获取l2订单。
+        
+        Args:
+            field_list: fieldlist
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_l2_order", field_list=list(field_list or []),
                           stock_code=stock_code, start_time=start_time, end_time=end_time, count=count)
 
     def get_l2_transaction(self, field_list=None, stock_code="", start_time="", end_time="", count=-1):
+        """获取l2transaction。
+        
+        Args:
+            field_list: fieldlist
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_l2_transaction", field_list=list(field_list or []),
                           stock_code=stock_code, start_time=start_time, end_time=end_time, count=count)
 
@@ -1091,19 +1913,63 @@ class BigQmtXtData:
     # ------------------------------------------------------------------
 
     def get_index_weight(self, index_code):
+        """获取索引权重。
+        
+        Args:
+            index_code: 索引code
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_index_weight", index_code=index_code)
 
     def get_trading_calendar(self, market, start_time="", end_time="", tradetimes=False):
+        """获取tradingcalendar。
+        
+        Args:
+            market: 市场
+            start_time: starttime
+            end_time: endtime
+            tradetimes: tradetimes
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_trading_calendar", market=market, start_time=start_time,
                           end_time=end_time, tradetimes=tradetimes)
 
     def get_trade_times(self, stockcode):
+        """获取成交times。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_trade_times", stockcode=stockcode)
 
     def get_cb_info(self, stockcode):
+        """获取cb信息。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("get_cb_info", stockcode=stockcode)
 
     def is_stock_type(self, stock, tag):
+        """判断是否股票type。
+        
+        Args:
+            stock: 股票
+            tag: tag
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("is_stock_type", stock=stock, tag=tag)
 
     # ------------------------------------------------------------------
@@ -1111,9 +1977,26 @@ class BigQmtXtData:
     # ------------------------------------------------------------------
 
     def add_sector(self, sector_name, stock_list):
+        """添加sector。
+        
+        Args:
+            sector_name: sectorname
+            stock_list: 股票list
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("add_sector", sector_name=sector_name, stock_list=list(stock_list or []))
 
     def remove_sector(self, sector_name):
+        """移除sector。
+        
+        Args:
+            sector_name: sectorname
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call("remove_sector", sector_name=sector_name)
 
     # ------------------------------------------------------------------
@@ -1122,6 +2005,15 @@ class BigQmtXtData:
 
     @staticmethod
     def datetime_to_timetag(datetime_str, format="%Y%m%d%H%M%S"):
+        """datetimetotimetag。
+        
+        Args:
+            datetime_str: datetimestr
+            format: format
+        
+        Returns:
+             — 处理结果。
+        """
         import datetime as _dt
         try:
             return int(_dt.datetime.strptime(str(datetime_str), format).timestamp() * 1000)
@@ -1130,6 +2022,15 @@ class BigQmtXtData:
 
     @staticmethod
     def timetag_to_datetime(timetag, format):
+        """timetagtodatetime。
+        
+        Args:
+            timetag: timetag
+            format: format
+        
+        Returns:
+             — 处理结果。
+        """
         import datetime as _dt
         try:
             return _dt.datetime.fromtimestamp(int(timetag) / 1000.0).strftime(format)
@@ -1138,10 +2039,21 @@ class BigQmtXtData:
 
     @staticmethod
     def timetagToDateTime(timetag, format):
+        """timetagtodatetime。
+        
+        Args:
+            timetag: timetag
+            format: format
+        
+        Returns:
+             — 处理结果。
+        """
         return BigQmtXtData.timetag_to_datetime(timetag, format)
 
 
 class BigQmtXtTrader:
+    """bigqmtxttrader，提供 register_callback, start, connect, subscribe, stop 等方法。
+    """
     def __init__(
         self,
         path=None,
@@ -1151,6 +2063,16 @@ class BigQmtXtTrader:
         redis_config=None,
         timeout_seconds=None,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            path: path
+            session_id: 数据库会话id
+            account_id: 账号ID
+            redis_client: redisclient
+            redis_config: redis配置
+            timeout_seconds: 超时(秒)seconds
+        """
         self.path = path
         self.session_id = session_id
         self.client = BigQmtRpcClient(
@@ -1164,6 +2086,14 @@ class BigQmtXtTrader:
         self._event_running = False
 
     def _cached_position_snapshot(self, account_id):
+        """cached持仓snapshot。
+        
+        Args:
+            account_id: 账号ID
+        
+        Returns:
+             — 处理结果。
+        """
         key = "bigqmt:positions:%s" % str(account_id or self.client.account_id or "")
         try:
             raw = self.client._redis().get(key)
@@ -1177,6 +2107,14 @@ class BigQmtXtTrader:
             return {}
 
     def _cached_positions(self, account_id):
+        """cachedpositions。
+        
+        Args:
+            account_id: 账号ID
+        
+        Returns:
+             — 处理结果。
+        """
         snapshot = self._cached_position_snapshot(account_id)
         positions = snapshot.get("positions") if isinstance(snapshot, dict) else None
         if isinstance(positions, dict):
@@ -1186,26 +2124,60 @@ class BigQmtXtTrader:
         return {}
 
     def _cached_asset(self, account_id):
+        """cached资产。
+        
+        Args:
+            account_id: 账号ID
+        
+        Returns:
+             — 处理结果。
+        """
         snapshot = self._cached_position_snapshot(account_id)
         asset = snapshot.get("asset") if isinstance(snapshot, dict) else None
         return asset if isinstance(asset, dict) else {}
 
     def register_callback(self, callback):
+        """注册回调函数。
+        
+        Args:
+            callback: 回调函数
+        
+        Returns:
+             — 处理结果。
+        """
         self.callback = callback
         return 0
 
     def start(self):
         # Launch the real-time execution-event listener so a registered callback's
         # on_stock_order / on_stock_trade fire as soon as Big QMT pushes them.
+        """start。
+        
+        Returns:
+             — 处理结果。
+        """
         self._start_event_listener()
         return 0
 
     def connect(self):
+        """connect。
+        
+        Returns:
+             — 处理结果。
+        """
         if self.client.account_id:
             self.client.call("ping")
         return 0
 
     def subscribe(self, account):
+        """subscribe。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         if not self.client.account_id:
             self.client.account_id = _account_id(account)
         # (Re)start the listener now that the account is known; the loop resubscribes
@@ -1214,6 +2186,11 @@ class BigQmtXtTrader:
         return 0
 
     def stop(self):
+        """stop。
+        
+        Returns:
+             — 处理结果。
+        """
         self._event_running = False
         thread = self._event_thread
         if thread is not None and thread.is_alive():
@@ -1222,6 +2199,8 @@ class BigQmtXtTrader:
         return 0
 
     def _start_event_listener(self):
+        """starteventlistener。
+        """
         if self._event_thread is not None and self._event_thread.is_alive():
             return
         self._event_running = True
@@ -1231,6 +2210,8 @@ class BigQmtXtTrader:
         self._event_thread.start()
 
     def _event_loop(self):
+        """eventloop。
+        """
         from .exec_events import order_channel, trade_channel
 
         while self._event_running:
@@ -1256,6 +2237,11 @@ class BigQmtXtTrader:
                     pass
 
     def _dispatch_event(self, raw):
+        """dispatchevent。
+        
+        Args:
+            raw: raw
+        """
         callback = self.callback
         if callback is None:
             return
@@ -1276,10 +2262,20 @@ class BigQmtXtTrader:
             pass
 
     def run_forever(self):
+        """运行forever。
+        """
         while True:
             time.sleep(3600)
 
     def query_stock_asset(self, account):
+        """查询股票资产。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = _account_id(account, self.client.account_id)
         try:
             data = self.client.call("query_stock_asset", {"account_id": account_id}, account_id=account_id) or {}
@@ -1303,6 +2299,14 @@ class BigQmtXtTrader:
         )
 
     def query_stock_positions(self, account):
+        """查询股票positions。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = _account_id(account, self.client.account_id)
         try:
             data = self.client.call("query_stock_positions", {"account_id": account_id}, account_id=account_id) or {}
@@ -1335,6 +2339,15 @@ class BigQmtXtTrader:
         return positions
 
     def query_stock_position(self, account, stock_code):
+        """查询股票持仓。
+        
+        Args:
+            account: account
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = _account_id(account, self.client.account_id)
         try:
             data = self.client.call(
@@ -1372,6 +2385,16 @@ class BigQmtXtTrader:
         ][0]
 
     def query_stock_orders(self, account, cancelable_only=False, strategy_name="bigqmt_signal_trader"):
+        """查询股票orders。
+        
+        Args:
+            account: account
+            cancelable_only: cancelableonly
+            strategy_name: 策略name
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = _account_id(account, self.client.account_id)
         data = self.client.call(
             "query_stock_orders",
@@ -1385,6 +2408,15 @@ class BigQmtXtTrader:
         return [self._order_from_dict(account_id, item) for item in _as_list(data)]
 
     def query_stock_order(self, account, order_id):
+        """查询股票订单。
+        
+        Args:
+            account: account
+            order_id: 订单id
+        
+        Returns:
+             — 处理结果。
+        """
         order_id = str(order_id or "")
         for order in self.query_stock_orders(account, cancelable_only=False):
             if str(order.order_id) == order_id or str(order.order_sysid) == order_id:
@@ -1392,6 +2424,15 @@ class BigQmtXtTrader:
         return None
 
     def query_stock_trades(self, account, strategy_name="bigqmt_signal_trader"):
+        """查询股票trades。
+        
+        Args:
+            account: account
+            strategy_name: 策略name
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = _account_id(account, self.client.account_id)
         data = self.client.call(
             "query_stock_trades",
@@ -1411,6 +2452,21 @@ class BigQmtXtTrader:
         strategy_name,
         order_remark,
     ):
+        """订单股票。
+        
+        Args:
+            account: account
+            stock_code: 股票代码
+            order_type: 订单type
+            order_volume: 订单volume
+            price_type: pricetype
+            price: price
+            strategy_name: 策略name
+            order_remark: 订单remark
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = _account_id(account, self.client.account_id)
         data = self.client.call(
             "order_stock",
@@ -1429,9 +2485,28 @@ class BigQmtXtTrader:
         return data.get("order_sys_id") or data.get("user_order_id") or -1
 
     def order_stock_async(self, *args, **kwargs):
+        """订单股票async。
+        
+        Args:
+            args: args
+            kwargs: kwargs
+        
+        Returns:
+             — 处理结果。
+        """
         return self.order_stock(*args, **kwargs)
 
     def cancel_order_stock_sysid(self, account, market, order_sysid):
+        """取消订单股票sysid。
+        
+        Args:
+            account: account
+            market: 市场
+            order_sysid: 订单sysid
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = _account_id(account, self.client.account_id)
         data = self.client.call(
             "cancel_order_stock_sysid",
@@ -1445,11 +2520,28 @@ class BigQmtXtTrader:
         return bool(data.get("success", data))
 
     def cancel_order_stock(self, account, order_id):
+        """取消订单股票。
+        
+        Args:
+            account: account
+            order_id: 订单id
+        
+        Returns:
+             — 处理结果。
+        """
         return self.cancel_order_stock_sysid(account, "", order_id)
 
     def unsubscribe(self, account):
         # MiniQMT xttrader.unsubscribe(account) — 取消账户订阅。
         # Big QMT RPC 模式下账户是被动响应，unsubscribe 为 no-op。
+        """unsubscribe。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return 0
 
     # ------------------------------------------------------------------
@@ -1460,6 +2552,15 @@ class BigQmtXtTrader:
     # ------------------------------------------------------------------
 
     def _query_account_list(self, account, method):
+        """queryaccountlist。
+        
+        Args:
+            account: account
+            method: method
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = _account_id(account, self.client.account_id)
         try:
             return self.client.call(method, {"account_id": account_id}, account_id=account_id) or []
@@ -1467,33 +2568,118 @@ class BigQmtXtTrader:
             return []
 
     def query_account_infos(self, account=None):
+        """查询accountinfos。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_account_infos")
 
     def query_account_status(self, account=None):
+        """查询accountstatus。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_account_status")
 
     def query_credit_detail(self, account):
+        """查询creditdetail。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_credit_detail")
 
     def query_stk_compacts(self, account):
+        """查询stkcompacts。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_stk_compacts")
 
     def query_credit_subjects(self, account):
+        """查询creditsubjects。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_credit_subjects")
 
     def query_credit_slo_code(self, account):
+        """查询creditslocode。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_credit_slo_code")
 
     def query_credit_assure(self, account):
+        """查询creditassure。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_credit_assure")
 
     def query_appointment_info(self, account):
+        """查询appointment信息。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_appointment_info")
 
     def query_smt_secu_info(self, account):
+        """查询smtsecu信息。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_smt_secu_info")
 
     def query_smt_secu_rate(self, account, stock_code, max_term, fare_way, credit_type, trade_type):
+        """查询smtsecurate。
+        
+        Args:
+            account: account
+            stock_code: 股票代码
+            max_term: maxterm
+            fare_way: fareway
+            credit_type: credittype
+            trade_type: 成交type
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = _account_id(account, self.client.account_id)
         try:
             return self.client.call(
@@ -1506,9 +2692,25 @@ class BigQmtXtTrader:
             return []
 
     def query_ipo_data(self, account=None):
+        """查询ipodata。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_account_list(account, "query_appointment_info")
 
     def query_new_purchase_limit(self, account):
+        """查询newpurchaselimit。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         return {}
 
     # ------------------------------------------------------------------
@@ -1521,79 +2723,239 @@ class BigQmtXtTrader:
     _async_seq = 0
 
     def _next_async_seq(self):
+        """nextasyncseq。
+        
+        Returns:
+             — 处理结果。
+        """
         BigQmtXtTrader._async_seq += 1
         return BigQmtXtTrader._async_seq
 
     def query_stock_asset_async(self, account):
+        """查询股票资产async。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_stock_asset(account)
         return self._next_async_seq()
 
     def query_stock_positions_async(self, account):
+        """查询股票positionsasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_stock_positions(account)
         return self._next_async_seq()
 
     def query_stock_orders_async(self, account, cancelable_only=False):
+        """查询股票ordersasync。
+        
+        Args:
+            account: account
+            cancelable_only: cancelableonly
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_stock_orders(account, cancelable_only)
         return self._next_async_seq()
 
     def query_stock_trades_async(self, account):
+        """查询股票tradesasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_stock_trades(account)
         return self._next_async_seq()
 
     def query_account_infos_async(self, account=None):
+        """查询accountinfosasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_account_infos(account)
         return self._next_async_seq()
 
     def query_account_status_async(self, account=None):
+        """查询accountstatusasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_account_status(account)
         return self._next_async_seq()
 
     def query_credit_detail_async(self, account):
+        """查询creditdetailasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_credit_detail(account)
         return self._next_async_seq()
 
     def query_stk_compacts_async(self, account):
+        """查询stkcompactsasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_stk_compacts(account)
         return self._next_async_seq()
 
     def query_credit_subjects_async(self, account):
+        """查询creditsubjectsasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_credit_subjects(account)
         return self._next_async_seq()
 
     def query_credit_slo_code_async(self, account):
+        """查询creditslocodeasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_credit_slo_code(account)
         return self._next_async_seq()
 
     def query_credit_assure_async(self, account):
+        """查询creditassureasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_credit_assure(account)
         return self._next_async_seq()
 
     def query_ipo_data_async(self, account=None):
+        """查询ipodataasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_ipo_data(account)
         return self._next_async_seq()
 
     def query_new_purchase_limit_async(self, account):
+        """查询newpurchaselimitasync。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_new_purchase_limit(account)
         return self._next_async_seq()
 
     def query_appointment_info_async(self, account):
+        """查询appointment信息async。
+        
+        Args:
+            account: account
+        
+        Returns:
+             — 处理结果。
+        """
         self.query_appointment_info(account)
         return self._next_async_seq()
 
     def cancel_order_stock_async(self, account, order_id):
+        """取消订单股票async。
+        
+        Args:
+            account: account
+            order_id: 订单id
+        
+        Returns:
+             — 处理结果。
+        """
         return self.cancel_order_stock(account, order_id)
 
     def cancel_order_stock_sysid_async(self, account, market, order_sysid):
+        """取消订单股票sysidasync。
+        
+        Args:
+            account: account
+            market: 市场
+            order_sysid: 订单sysid
+        
+        Returns:
+             — 处理结果。
+        """
         return self.cancel_order_stock_sysid(account, market, order_sysid)
 
     def set_relaxed_response_order_enabled(self, enabled=True):
         # 内部行为开关，RPC 模式下无意义，no-op。
+        """设置relaxed响应订单是否启用。
+        
+        Args:
+            enabled: 是否启用
+        
+        Returns:
+             — 处理结果。
+        """
         return 0
 
     def smt_appointment_async(self, *args, **kwargs):
+        """smtappointmentasync。
+        
+        Args:
+            args: args
+            kwargs: kwargs
+        """
         raise NotImplementedError("smt_appointment is not supported via Big QMT RPC")
 
     def _order_from_dict(self, account_id, item):
+        """订单fromdict。
+        
+        Args:
+            account_id: 账号ID
+            item: item
+        
+        Returns:
+             — 处理结果。
+        """
         action = item.get("action")
         order_type = _action_to_order_type(action)
         order_sysid = str(item.get("order_sys_id") or item.get("order_sysid") or item.get("order_id") or "")
@@ -1612,6 +2974,15 @@ class BigQmtXtTrader:
         )
 
     def _trade_from_dict(self, account_id, item):
+        """成交fromdict。
+        
+        Args:
+            account_id: 账号ID
+            item: item
+        
+        Returns:
+             — 处理结果。
+        """
         action = item.get("action")
         order_type = _action_to_order_type(action)
         order_sysid = str(item.get("order_sys_id") or item.get("order_sysid") or "")
@@ -1638,6 +3009,17 @@ xtdata = None
 
 
 def configure(account_id=None, redis_client=None, redis_config=None, timeout_seconds=None):
+    """configure。
+    
+    Args:
+        account_id: 账号ID
+        redis_client: redisclient
+        redis_config: redis配置
+        timeout_seconds: 超时(秒)seconds
+    
+    Returns:
+         — 处理结果。
+    """
     global _default_client, xt_trader, xtdata
     _default_client = BigQmtRpcClient(
         account_id=account_id,
@@ -1656,6 +3038,11 @@ def configure(account_id=None, redis_client=None, redis_config=None, timeout_sec
 
 
 def get_default_client():
+    """获取defaultclient。
+    
+    Returns:
+         — 处理结果。
+    """
     global _default_client
     if _default_client is None:
         configure()

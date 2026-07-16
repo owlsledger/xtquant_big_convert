@@ -10,49 +10,152 @@ from .models import AssetSnapshot
 
 
 class EmptySignalSource:
+    """是否为空信号source，提供 fetch, ack 等方法。
+    """
     def fetch(self, account_id, limit):
+        """fetch。
+        
+        Args:
+            account_id: 账号ID
+            limit: limit
+        
+        Returns:
+             — 处理结果。
+        """
         return []
 
     def ack(self, signal):
+        """ack。
+        
+        Args:
+            signal: 信号
+        
+        Returns:
+             — 处理结果。
+        """
         return None
 
 
 class EmptyMarketDataProvider:
+    """EmptyMarketData提供者，提供 get_ticks, get_instrument 等方法。
+    """
     def get_ticks(self, codes):
+        """获取ticks。
+        
+        Args:
+            codes: codes
+        
+        Returns:
+             — 处理结果。
+        """
         return {}
 
     def get_instrument(self, code):
+        """获取instrument。
+        
+        Args:
+            code: code
+        
+        Returns:
+             — 处理结果。
+        """
         return {}
 
 
 class EmptyPositionProvider:
+    """EmptyPosition提供者，提供 get_positions, get_asset 等方法。
+    """
     def get_positions(self, account_id):
+        """获取positions。
+        
+        Args:
+            account_id: 账号ID
+        
+        Returns:
+             — 处理结果。
+        """
         return {}
 
     def get_asset(self, account_id):
+        """获取资产。
+        
+        Args:
+            account_id: 账号ID
+        
+        Returns:
+             — 处理结果。
+        """
         return AssetSnapshot(account_id=account_id, cash=None, total_asset=None)
 
 
 class NoopPositionSyncSink:
+    """noop持仓syncsink，提供 publish 等方法。
+    """
     def __init__(self):
+        """初始化实例，设置内部状态和依赖项。
+        """
         self.snapshots = []
 
     def publish(self, snapshot):
+        """publish。
+        
+        Args:
+            snapshot: snapshot
+        """
         self.snapshots.append(snapshot)
 
 
 class NoopStateStore:
+    """noopstatestore，提供 claim, mark_submitted, mark_finished 等方法。
+    """
     def claim(self, signal, consumer_id):
+        """claim。
+        
+        Args:
+            signal: 信号
+            consumer_id: consumerid
+        
+        Returns:
+             — 处理结果。
+        """
         return False
 
     def mark_submitted(self, signal_id, result):
+        """marksubmitted。
+        
+        Args:
+            signal_id: 信号id
+            result: result
+        
+        Returns:
+             — 处理结果。
+        """
         return None
 
     def mark_finished(self, signal_id, status, message=""):
+        """markfinished。
+        
+        Args:
+            signal_id: 信号id
+            status: status
+            message: message
+        
+        Returns:
+             — 处理结果。
+        """
         return None
 
 
 def _config_bool(value, default=False):
+    """配置bool。
+    
+    Args:
+        value: 值
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     if value is None:
         return default
     if isinstance(value, bool):
@@ -61,6 +164,15 @@ def _config_bool(value, default=False):
 
 
 def build_app(context_info=None, config=None):
+    """构建app。
+    
+    Args:
+        context_info: context信息
+        config: 配置
+    
+    Returns:
+         — 处理结果。
+    """
     config = config or {}
     mode = str(config.get("mode") or "dryrun").lower()
     account_id = config.get("account_id", "default")

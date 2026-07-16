@@ -36,6 +36,14 @@ MARKET_CODES = {"SH", "SZ", "BJ", "HK"}
 
 
 def normalize_market_or_stock_code(code):
+    """标准化/归一化市场or股票code。
+    
+    Args:
+        code: code
+    
+    Returns:
+         — 处理结果。
+    """
     text = str(code or "").strip().upper()
     if text in MARKET_CODES:
         return text
@@ -114,18 +122,44 @@ def _load_native_xtdata():
 
 
 class BigQmtMarketDataProvider:
+    """BigQmtMarketData提供者，提供 get_ticks, get_instrument, get_instrument_type, get_stock_list_in_sector, get_market_data 等方法。
+    """
     def __init__(self, context_info, native_xtdata=None):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            context_info: context信息
+            native_xtdata: nativextdata
+        """
         self.context_info = context_info
         # Allow injection for tests; otherwise resolve lazily on first use.
         self._native_xtdata = native_xtdata
 
     def _context_method(self, method_name):
+        """contextmethod。
+        
+        Args:
+            method_name: methodname
+        
+        Returns:
+             — 处理结果。
+        """
         method = getattr(self.context_info, method_name, None)
         if method is None:
             raise NotImplementedError("ContextInfo.%s is not available" % method_name)
         return method
 
     def _call_context(self, method_name, *args, **kwargs):
+        """callcontext。
+        
+        Args:
+            method_name: methodname
+            args: args
+            kwargs: kwargs
+        
+        Returns:
+             — 处理结果。
+        """
         return self._context_method(method_name)(*args, **kwargs)
 
     def _native(self):
@@ -162,6 +196,14 @@ class BigQmtMarketDataProvider:
         return context_caller()
 
     def _call_first_supported(self, shapes):
+        """callfirstsupported。
+        
+        Args:
+            shapes: shapes
+        
+        Returns:
+             — 处理结果。
+        """
         last_error = None
         for method_name, args, kwargs in shapes:
             method = getattr(self.context_info, method_name, None)
@@ -177,6 +219,15 @@ class BigQmtMarketDataProvider:
         raise NotImplementedError("none of the ContextInfo methods is available")
 
     def _market_data_shapes(self, method_name, **params):
+        """市场datashapes。
+        
+        Args:
+            method_name: methodname
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         field_list = list(params.get("field_list") or params.get("fields") or [])
         stock_list = list(params.get("stock_list") or params.get("stock_code") or [])
         period = params.get("period", "1d")
@@ -256,16 +307,41 @@ class BigQmtMarketDataProvider:
         ]
 
     def get_ticks(self, codes):
+        """获取ticks。
+        
+        Args:
+            codes: codes
+        
+        Returns:
+             — 处理结果。
+        """
         normalized_codes = [normalize_market_or_stock_code(code) for code in codes]
         data = self.context_info.get_full_tick(normalized_codes)
         return data or {}
 
     def get_instrument(self, code):
+        """获取instrument。
+        
+        Args:
+            code: code
+        
+        Returns:
+             — 处理结果。
+        """
         normalized = normalize_stock_code(code)
         data = self.context_info.get_instrumentdetail(normalized)
         return data or {}
 
     def get_instrument_type(self, code, variety_list=None):
+        """获取instrumenttype。
+        
+        Args:
+            code: code
+            variety_list: varietylist
+        
+        Returns:
+             — 处理结果。
+        """
         if hasattr(self.context_info, "get_instrument_type"):
             return self.context_info.get_instrument_type(code, variety_list)
         normalized = normalize_stock_code(code)
@@ -282,6 +358,15 @@ class BigQmtMarketDataProvider:
         return result
 
     def get_stock_list_in_sector(self, sector_name, real_timetag=-1):
+        """获取股票listinsector。
+        
+        Args:
+            sector_name: sectorname
+            real_timetag: realtimetag
+        
+        Returns:
+             — 处理结果。
+        """
         shapes = [
             ("get_stock_list_in_sector", (sector_name, real_timetag), {}),
             ("get_stock_list_in_sector", (sector_name,), {}),
@@ -300,6 +385,21 @@ class BigQmtMarketDataProvider:
         dividend_type="none",
         fill_data=True,
     ):
+        """获取市场data。
+        
+        Args:
+            field_list: fieldlist
+            stock_list: 股票list
+            period: period
+            start_time: starttime
+            end_time: endtime
+            count: count
+            dividend_type: 除权除息type
+            fill_data: filldata
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_first_supported(
             self._market_data_shapes(
                 "get_market_data",
@@ -315,12 +415,28 @@ class BigQmtMarketDataProvider:
         )
 
     def get_market_data_ex(self, **kwargs):
+        """获取市场dataex。
+        
+        Args:
+            kwargs: kwargs
+        
+        Returns:
+             — 处理结果。
+        """
         shapes = self._market_data_shapes("get_market_data_ex", **kwargs)
         if hasattr(self.context_info, "get_market_data"):
             shapes.extend(self._market_data_shapes("get_market_data", **kwargs))
         return self._call_first_supported(shapes)
 
     def get_local_data(self, **kwargs):
+        """获取localdata。
+        
+        Args:
+            kwargs: kwargs
+        
+        Returns:
+             — 处理结果。
+        """
         shapes = self._market_data_shapes("get_local_data", **kwargs)
         if hasattr(self.context_info, "get_market_data"):
             shapes.extend(self._market_data_shapes("get_market_data", **kwargs))
@@ -331,6 +447,16 @@ class BigQmtMarketDataProvider:
         # positional args (code + a single date). The xtdata SDK has the same
         # 2-arg shape. We accept start_time/end_time for API compatibility but
         # pass end_time (or start_time) as the single date when supplied.
+        """获取dividfactors。
+        
+        Args:
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+        
+        Returns:
+             — 处理结果。
+        """
         date = end_time or start_time
         if date:
             return self._call_context("get_divid_factors", stock_code, date)
@@ -359,7 +485,24 @@ class BigQmtMarketDataProvider:
         )
 
     def download_history_data(self, stock_code, period, start_time="", end_time="", incrementally=None):
+        """downloadhistorydata。
+        
+        Args:
+            stock_code: 股票代码
+            period: period
+            start_time: starttime
+            end_time: endtime
+            incrementally: incrementally
+        
+        Returns:
+             — 处理结果。
+        """
         def _via_context():
+            """viacontext。
+            
+            Returns:
+                 — 处理结果。
+            """
             kwargs = {"stock_code": stock_code, "period": period, "start_time": start_time, "end_time": end_time}
             if incrementally is not None:
                 kwargs["incrementally"] = incrementally
@@ -371,9 +514,26 @@ class BigQmtMarketDataProvider:
         )
 
     def download_history_data2(self, stock_list, period, start_time="", end_time="", incrementally=None):
+        """downloadhistorydata2。
+        
+        Args:
+            stock_list: 股票list
+            period: period
+            start_time: starttime
+            end_time: endtime
+            incrementally: incrementally
+        
+        Returns:
+             — 处理结果。
+        """
         stock_list = list(stock_list or [])
 
         def _via_context():
+            """viacontext。
+            
+            Returns:
+                 — 处理结果。
+            """
             kwargs = {"stock_list": stock_list, "period": period, "start_time": start_time, "end_time": end_time}
             if incrementally is not None:
                 kwargs["incrementally"] = incrementally
@@ -389,9 +549,25 @@ class BigQmtMarketDataProvider:
         # ContextInfo stub signature: get_trading_dates(stockcode, start_date, end_date, count, period)
         # — note the FIRST argument differs (market vs stockcode). Every caller in
         # this codebase passes a market code, so the xtdata SDK is the correct path.
+        """获取tradingdates。
+        
+        Args:
+            market: 市场
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         def _via_context():
             # ContextInfo's first arg is stockcode; pass market through anyway so
             # backtest contexts still return something rather than crashing.
+            """viacontext。
+            
+            Returns:
+                 — 处理结果。
+            """
             return self._call_context("get_trading_dates", market, start_time, end_time, count)
 
         return self._native_or_context(
@@ -409,6 +585,11 @@ class BigQmtMarketDataProvider:
         This is slower than the SDK (it walks the calendar) but correct.
         """
         def _via_context():
+            """viacontext。
+            
+            Returns:
+                 — 处理结果。
+            """
             return self._call_context("get_holidays")
 
         try:
@@ -447,7 +628,20 @@ class BigQmtMarketDataProvider:
         return holidays
 
     def download_holiday_data(self, incrementally=True):
+        """downloadholidaydata。
+        
+        Args:
+            incrementally: incrementally
+        
+        Returns:
+             — 处理结果。
+        """
         def _via_context():
+            """viacontext。
+            
+            Returns:
+                 — 处理结果。
+            """
             return self._call_context("download_holiday_data", incrementally=incrementally)
 
         module = self._native()
@@ -460,27 +654,93 @@ class BigQmtMarketDataProvider:
         return _via_context()
 
     def get_ipo_info(self, start_time="", end_time=""):
+        """获取ipo信息。
+        
+        Args:
+            start_time: starttime
+            end_time: endtime
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_ipo_info", start_time, end_time)
 
     def get_etf_info(self):
         # xtdata SDK 函数（SDK 893 行），ContextInfo 无此方法，走 native SDK。
+        """获取etf信息。
+        
+        Returns:
+             — 处理结果。
+        """
         def _via_context():
+            """viacontext。
+            
+            Returns:
+                 — 处理结果。
+            """
             return self._raise_unavailable("get_etf_info")
         return self._native_or_context("get_etf_info", _via_context)
 
     def download_etf_info(self):
+        """downloadetf信息。
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("download_etf_info")
 
     def get_option_list(self, undl_code, dedate, opttype="", isavailavle=False):
+        """获取optionlist。
+        
+        Args:
+            undl_code: undlcode
+            dedate: dedate
+            opttype: opttype
+            isavailavle: isavailavle
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_option_list", undl_code, dedate, opttype, isavailavle)
 
     def get_his_option_list(self, undl_code, dedate):
+        """获取hisoptionlist。
+        
+        Args:
+            undl_code: undlcode
+            dedate: dedate
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_his_option_list", undl_code, dedate)
 
     def get_his_option_list_batch(self, undl_code, start_time="", end_time=""):
+        """获取hisoptionlistbatch。
+        
+        Args:
+            undl_code: undlcode
+            start_time: starttime
+            end_time: endtime
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_his_option_list_batch", undl_code, start_time, end_time)
 
     def get_financial_data(self, stock_list, table_list=None, start_time="", end_time="", report_type="report_time"):
+        """获取financialdata。
+        
+        Args:
+            stock_list: 股票list
+            table_list: tablelist
+            start_time: starttime
+            end_time: endtime
+            report_type: reporttype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "get_financial_data",
             stock_list,
@@ -491,6 +751,18 @@ class BigQmtMarketDataProvider:
         )
 
     def download_financial_data(self, stock_list, table_list=None, start_time="", end_time="", incrementally=None):
+        """downloadfinancialdata。
+        
+        Args:
+            stock_list: 股票list
+            table_list: tablelist
+            start_time: starttime
+            end_time: endtime
+            incrementally: incrementally
+        
+        Returns:
+             — 处理结果。
+        """
         kwargs = {
             "stock_list": stock_list,
             "table_list": table_list or [],
@@ -502,6 +774,17 @@ class BigQmtMarketDataProvider:
         return self._call_context("download_financial_data", **kwargs)
 
     def download_financial_data2(self, stock_list, table_list=None, start_time="", end_time=""):
+        """downloadfinancialdata2。
+        
+        Args:
+            stock_list: 股票list
+            table_list: tablelist
+            start_time: starttime
+            end_time: endtime
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("download_financial_data2", stock_list, table_list or [], start_time, end_time)
 
     # Well-known sector names that Big QMT's ContextInfo recognises for
@@ -525,6 +808,11 @@ class BigQmtMarketDataProvider:
         so callers can still drive get_stock_list_in_sector(name).
         """
         def _via_context():
+            """viacontext。
+            
+            Returns:
+                 — 处理结果。
+            """
             return self._call_context("get_sector_list")
 
         try:
@@ -537,18 +825,44 @@ class BigQmtMarketDataProvider:
 
     def get_sector_info(self, sector_name=""):
         # xtdata SDK 函数，ContextInfo 无此方法，走 native SDK。
+        """获取sector信息。
+        
+        Args:
+            sector_name: sectorname
+        
+        Returns:
+             — 处理结果。
+        """
         def _via_context():
+            """viacontext。
+            
+            Returns:
+                 — 处理结果。
+            """
             return self._raise_unavailable("get_sector_info")
         return self._native_or_context("get_sector_info", _via_context, sector_name)
 
     def get_markets(self):
         # No such function exists in either ContextInfo or the xtdata SDK.
         # MiniQMT-only convenience; synthesize from the known A-share markets.
+        """获取markets。
+        
+        Returns:
+             — 处理结果。
+        """
         return list(MARKET_CODES)
 
     def get_market_last_trade_date(self, market):
         # No such function exists in either ContextInfo or the xtdata SDK.
         # Derive it from get_trading_dates(market, count=1) — last entry.
+        """获取市场last成交date。
+        
+        Args:
+            market: 市场
+        
+        Returns:
+             — 处理结果。
+        """
         try:
             dates = self.get_trading_dates(market, "", "", 1) or []
         except Exception:
@@ -562,6 +876,21 @@ class BigQmtMarketDataProvider:
             return None
 
     def call_formula(self, formula_name, stock_code, period, start_time="", end_time="", count=-1, dividend_type=None, extend_param=None):
+        """callformula。
+        
+        Args:
+            formula_name: formulaname
+            stock_code: 股票代码
+            period: period
+            start_time: starttime
+            end_time: endtime
+            count: count
+            dividend_type: 除权除息type
+            extend_param: extendparam
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "call_formula",
             formula_name,
@@ -575,6 +904,21 @@ class BigQmtMarketDataProvider:
         )
 
     def subscribe_formula(self, formula_name, stock_code, period, start_time="", end_time="", count=-1, dividend_type=None, extend_param=None):
+        """订阅formula。
+        
+        Args:
+            formula_name: formulaname
+            stock_code: 股票代码
+            period: period
+            start_time: starttime
+            end_time: endtime
+            count: count
+            dividend_type: 除权除息type
+            extend_param: extendparam
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "subscribe_formula",
             formula_name,
@@ -588,12 +932,47 @@ class BigQmtMarketDataProvider:
         )
 
     def unsubscribe_formula(self, request_id):
+        """unsubscribeformula。
+        
+        Args:
+            request_id: 请求id
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("unsubscribe_formula", request_id)
 
     def get_formula_result(self, request_id, start_time="", end_time="", count=-1, timeout_second=-1):
+        """获取formularesult。
+        
+        Args:
+            request_id: 请求id
+            start_time: starttime
+            end_time: endtime
+            count: count
+            timeout_second: 超时(秒)second
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_formula_result", request_id, start_time, end_time, count, timeout_second)
 
     def gen_factor_index(self, data_name, formula_name, vars, sector_list, start_time="", end_time="", period="1d", dividend_type="none"):
+        """gen因子索引。
+        
+        Args:
+            data_name: dataname
+            formula_name: formulaname
+            vars: vars
+            sector_list: sectorlist
+            start_time: starttime
+            end_time: endtime
+            period: period
+            dividend_type: 除权除息type
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "gen_factor_index",
             data_name,
@@ -615,6 +994,17 @@ class BigQmtMarketDataProvider:
         # ContextInfo stub: get_longhubang(stock_list=[], startTime='', endTime='', count=-1)
         # 桩里有特殊逻辑：endTime 传 int 时当作 count + endTime=startTime + startTime='0'。
         # 我们直接按 4 参数语义透传，避免触发桩的 int 歧义分支。
+        """获取longhubang。
+        
+        Args:
+            stock_list: 股票list
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "get_longhubang",
             list(stock_list or []),
@@ -626,6 +1016,18 @@ class BigQmtMarketDataProvider:
     def get_top10_share_holder(self, stock_list, data_name, start_time, end_time, report_type="report_time"):
         # ContextInfo stub: get_top10_share_holder(stock_list, data_name, start_time, end_time, report_type='report_time')
         # data_name 只接受 'holder' 或 'flow_holder'；report_type 只接受 'report_time' 或 'announce_time'。
+        """获取top10shareholder。
+        
+        Args:
+            stock_list: 股票list
+            data_name: dataname
+            start_time: starttime
+            end_time: endtime
+            report_type: reporttype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "get_top10_share_holder",
             stock_list,
@@ -638,6 +1040,17 @@ class BigQmtMarketDataProvider:
     def get_holder_num(self, stock_list=None, start_time="", end_time="", report_type="report_time"):
         # ContextInfo stub: get_holder_num(stock_list=[], startTime='', endTime='', report_type='report_time')
         # 返回股东户数 DataFrame。
+        """获取holdernum。
+        
+        Args:
+            stock_list: 股票list
+            start_time: starttime
+            end_time: endtime
+            report_type: reporttype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "get_holder_num",
             list(stock_list or []),
@@ -649,6 +1062,16 @@ class BigQmtMarketDataProvider:
     def get_turnover_rate(self, stock_code=None, start_time="19720101", end_time="22010101"):
         # ContextInfo stub: get_turnover_rate(stock_code=[], start_time='19720101', end_time='22010101')
         # 注意：start_time/end_time 必须是 8 位日期串（YYYYMMDD），否则返回空 DataFrame。
+        """获取turnoverrate。
+        
+        Args:
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "get_turnover_rate",
             list(stock_code or []),
@@ -659,10 +1082,30 @@ class BigQmtMarketDataProvider:
     def get_industry(self, industry_name):
         # ContextInfo stub: get_industry(industry_name, real_timetag = -1)
         # 注意桩签名有第二个可选参数 real_timetag，默认 -1（最新）。
+        """获取industry。
+        
+        Args:
+            industry_name: industryname
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_industry", industry_name, -1)
 
     def get_close_price(self, market, stock_code, real_timetag, period=86400000, divid_type=0):
         # ContextInfo stub: get_close_price(market, stockCode, realTimetag, period=86400000, dividType=0)
+        """获取closeprice。
+        
+        Args:
+            market: 市场
+            stock_code: 股票代码
+            real_timetag: realtimetag
+            period: period
+            divid_type: dividtype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_close_price", market, stock_code, real_timetag, period, divid_type)
 
     # ------------------------------------------------------------------
@@ -672,6 +1115,20 @@ class BigQmtMarketDataProvider:
     def bsm_price(self, opt_type, target_price, strike_price, risk_free, sigma, days, dividend=0):
         # ContextInfo stub: bsm_price(optType, targetPrice, strikePrice, riskFree, sigma, days, dividend=0)
         # opt_type: 'C'(call) / 'P'(put)。target_price 可为 list（批量）。
+        """bsmprice。
+        
+        Args:
+            opt_type: opttype
+            target_price: targetprice
+            strike_price: strikeprice
+            risk_free: 风险free
+            sigma: sigma
+            days: days
+            dividend: 除权除息
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "bsm_price",
             opt_type,
@@ -685,6 +1142,20 @@ class BigQmtMarketDataProvider:
 
     def bsm_iv(self, opt_type, target_price, strike_price, option_price, risk_free, days, dividend=0):
         # ContextInfo stub: bsm_iv(optType, targetPrice, strikePrice, optionPrice, riskFree, days, dividend=0)
+        """bsmiv。
+        
+        Args:
+            opt_type: opttype
+            target_price: targetprice
+            strike_price: strikeprice
+            option_price: optionprice
+            risk_free: 风险free
+            days: days
+            dividend: 除权除息
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "bsm_iv",
             opt_type,
@@ -698,19 +1169,51 @@ class BigQmtMarketDataProvider:
 
     def get_option_iv(self, opt_code):
         # ContextInfo stub: get_option_iv(opt_code) — 计算单只期权的隐含波动率。
+        """获取optioniv。
+        
+        Args:
+            opt_code: optcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_option_iv", opt_code)
 
     def get_option_detail_data(self, stockcode):
         # ContextInfo stub: get_option_detail_data(stockcode)
+        """获取optiondetaildata。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_option_detail_data", stockcode)
 
     def get_option_undl_data(self, undl_code_ref=""):
         # ContextInfo stub: get_option_undl_data(undl_code_ref='') — 标的下所有期权。
         # 传空串返回全市场期权-标的映射 dict。
+        """获取optionundldata。
+        
+        Args:
+            undl_code_ref: undlcoderef
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_option_undl_data", undl_code_ref)
 
     def get_option_undl(self, opt_code):
         # ContextInfo stub: get_option_undl(opt_code) — 期权的标的代码。
+        """获取optionundl。
+        
+        Args:
+            opt_code: optcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_option_undl", opt_code)
 
     # ------------------------------------------------------------------
@@ -720,6 +1223,19 @@ class BigQmtMarketDataProvider:
     def get_raw_financial_data(self, field_list, stock_list, start_time, end_time, report_type="report_time", data_type="dict"):
         # ContextInfo stub: get_raw_financial_data(fieldList, stockList, startDate, endDate, report_type='report_time', data_type='dict')
         # 返回原始财务数据（未做字段对齐），data_type 可为 'dict'/'frame'。
+        """获取rawfinancialdata。
+        
+        Args:
+            field_list: fieldlist
+            stock_list: 股票list
+            start_time: starttime
+            end_time: endtime
+            report_type: reporttype
+            data_type: datatype
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "get_raw_financial_data",
             field_list,
@@ -733,6 +1249,17 @@ class BigQmtMarketDataProvider:
     def get_factor_data(self, field_list, stock_list, start_date, end_date):
         # ContextInfo stub: get_factor_data(field_list, stock_list, start_date, end_date)
         # 返回因子库数据。
+        """获取因子data。
+        
+        Args:
+            field_list: fieldlist
+            stock_list: 股票list
+            start_date: 开始日期
+            end_date: 结束日期
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context(
             "get_factor_data",
             field_list,
@@ -747,10 +1274,26 @@ class BigQmtMarketDataProvider:
 
     def get_his_st_data(self, stock_code):
         # ContextInfo stub: get_his_st_data(stockCode) — 历史 ST 状态。
+        """获取hisstdata。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_his_st_data", stock_code)
 
     def get_his_index_data(self, stock_code):
         # ContextInfo stub: get_his_index_data(stockCode) — 历史指数权重。
+        """获取his索引data。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_his_index_data", stock_code)
 
     # ------------------------------------------------------------------
@@ -759,18 +1302,52 @@ class BigQmtMarketDataProvider:
 
     def get_main_contract(self, code_market):
         # ContextInfo stub: get_main_contract(codemarket)
+        """获取maincontract。
+        
+        Args:
+            code_market: code市场
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_main_contract", code_market)
 
     def get_his_contract_list(self, market):
         # ContextInfo stub: get_his_contract_list(market)
+        """获取hiscontractlist。
+        
+        Args:
+            market: 市场
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_his_contract_list", market)
 
     def get_date_location(self, date):
         # ContextInfo stub: get_date_location(date) — 日期在交易日历中的位置。
+        """获取datelocation。
+        
+        Args:
+            date: date
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_date_location", date)
 
     def get_ETF_list(self, market, stock_code, type_list=None):
         # ContextInfo stub: get_ETF_list(market, stockcode, typeList=[])
+        """获取etflist。
+        
+        Args:
+            market: 市场
+            stock_code: 股票代码
+            type_list: typelist
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_ETF_list", market, stock_code, list(type_list or []))
 
     # ------------------------------------------------------------------
@@ -779,14 +1356,38 @@ class BigQmtMarketDataProvider:
 
     def get_north_finance_change(self, period):
         # ContextInfo stub: get_north_finance_change(period) — 北向资金流入流出。
+        """获取northfinancechange。
+        
+        Args:
+            period: period
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_north_finance_change", period)
 
     def get_hkt_statistics(self, stock_code):
         # ContextInfo stub: get_hkt_statistics(stock_code) — 港股通统计。
+        """获取hktstatistics。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_hkt_statistics", stock_code)
 
     def get_hkt_details(self, stock_code):
         # ContextInfo stub: get_hkt_details(stock_code) — 港股通明细。
+        """获取hktdetails。
+        
+        Args:
+            stock_code: 股票代码
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_hkt_details", stock_code)
 
     # ------------------------------------------------------------------
@@ -795,6 +1396,15 @@ class BigQmtMarketDataProvider:
 
     def create_sector(self, sector_name, stock_list):
         # ContextInfo stub: create_sector(sectorname, stocklist) — 创建/更新自定义板块。
+        """创建sector。
+        
+        Args:
+            sector_name: sectorname
+            stock_list: 股票list
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("create_sector", sector_name, list(stock_list or []))
 
     # ------------------------------------------------------------------
@@ -803,58 +1413,171 @@ class BigQmtMarketDataProvider:
 
     def get_stock_name(self, stock):
         # ContextInfo stub: get_stock_name(stock)
+        """获取股票name。
+        
+        Args:
+            stock: 股票
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_stock_name", stock)
 
     def get_stock_type(self, stock):
         # ContextInfo stub: get_stock_type(stock)
+        """获取股票type。
+        
+        Args:
+            stock: 股票
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_stock_type", stock)
 
     def get_last_close(self, stock):
         # ContextInfo stub: get_last_close(stock)
+        """获取lastclose。
+        
+        Args:
+            stock: 股票
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_last_close", stock)
 
     def get_last_volume(self, stock):
         # ContextInfo stub: get_last_volume(stock)
+        """获取lastvolume。
+        
+        Args:
+            stock: 股票
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_last_volume", stock)
 
     def get_open_date(self, stock):
         # ContextInfo stub: get_open_date(stock) — 上市日期。
+        """获取opendate。
+        
+        Args:
+            stock: 股票
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_open_date", stock)
 
     def get_contract_expire_date(self, stock):
         # ContextInfo stub: get_contract_expire_date(stock) — 到期日。
+        """获取contractexpiredate。
+        
+        Args:
+            stock: 股票
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_contract_expire_date", stock)
 
     def get_contract_multiplier(self, stockcode):
         # ContextInfo stub: get_contract_multiplier(stockcode) — 合约乘数。
+        """获取contractmultiplier。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_contract_multiplier", stockcode)
 
     def get_float_caps(self, stockcode):
         # ContextInfo stub: get_float_caps(stockcode) — 流通市值。
+        """获取floatcaps。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_float_caps", stockcode)
 
     def get_total_share(self, stockcode):
         # ContextInfo stub: get_total_share(stockcode) — 总股本。
+        """获取totalshare。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_total_share", stockcode)
 
     def get_turn_over_rate(self, stockcode):
         # ContextInfo stub: get_turn_over_rate(stockcode) — 换手率（单值版，区别于上面的 get_turnover_rate 区间版）。
+        """获取turnoverrate。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_turn_over_rate", stockcode)
 
     def get_weight_in_index(self, mtkindexcode, stockcode):
         # ContextInfo stub: get_weight_in_index(mtkindexcode, stockcode) — 指数中权重。
+        """获取权重in索引。
+        
+        Args:
+            mtkindexcode: mtkindexcode
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_weight_in_index", mtkindexcode, stockcode)
 
     def get_svol(self, stock):
         # ContextInfo stub: get_svol(stock)
+        """获取svol。
+        
+        Args:
+            stock: 股票
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_svol", stock)
 
     def get_bvol(self, stock):
         # ContextInfo stub: get_bvol(stock)
+        """获取bvol。
+        
+        Args:
+            stock: 股票
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_bvol", stock)
 
     def get_risk_free_rate(self, index=-1):
         # ContextInfo stub: get_risk_free_rate(index) — 无风险利率。
+        """获取风险freerate。
+        
+        Args:
+            index: 索引
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_context("get_risk_free_rate", index)
 
     # ------------------------------------------------------------------
@@ -864,6 +1587,18 @@ class BigQmtMarketDataProvider:
     def get_l2_quote(self, field_list=None, stock_code="", start_time="", end_time="", count=-1):
         # xtdata SDK: get_l2_quote(field_list=[], stock_code='', start_time='', end_time='', count=-1)
         # ContextInfo 无此方法；走原生 xtdata SDK，连不上则 NotImplementedError。
+        """获取l2quote。
+        
+        Args:
+            field_list: fieldlist
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         return self._native_or_context(
             "get_l2_quote",
             lambda: self._raise_unavailable("get_l2_quote"),
@@ -872,6 +1607,18 @@ class BigQmtMarketDataProvider:
 
     def get_l2_order(self, field_list=None, stock_code="", start_time="", end_time="", count=-1):
         # xtdata SDK: get_l2_order(...) — L2 逐笔委托。
+        """获取l2订单。
+        
+        Args:
+            field_list: fieldlist
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         return self._native_or_context(
             "get_l2_order",
             lambda: self._raise_unavailable("get_l2_order"),
@@ -880,6 +1627,18 @@ class BigQmtMarketDataProvider:
 
     def get_l2_transaction(self, field_list=None, stock_code="", start_time="", end_time="", count=-1):
         # xtdata SDK: get_l2_transaction(...) — L2 逐笔成交。
+        """获取l2transaction。
+        
+        Args:
+            field_list: fieldlist
+            stock_code: 股票代码
+            start_time: starttime
+            end_time: endtime
+            count: count
+        
+        Returns:
+             — 处理结果。
+        """
         return self._native_or_context(
             "get_l2_transaction",
             lambda: self._raise_unavailable("get_l2_transaction"),
@@ -889,6 +1648,16 @@ class BigQmtMarketDataProvider:
     def subscribe_l2thousand(self, stock_code, gear_num=0, callback=None):
         # xtdata SDK: subscribe_l2thousand(stock_code, gear_num=0, callback=None) — 千档盘口订阅。
         # callback 在 RPC 模型下无意义（无回调通道），忽略。
+        """订阅l2thousand。
+        
+        Args:
+            stock_code: 股票代码
+            gear_num: gearnum
+            callback: 回调函数
+        
+        Returns:
+             — 处理结果。
+        """
         module = self._native()
         if module is not None and hasattr(module, "subscribe_l2thousand"):
             try:
@@ -904,6 +1673,14 @@ class BigQmtMarketDataProvider:
     def get_index_weight(self, index_code):
         # xtdata SDK: get_index_weight(index_code) — 指数成分权重。
         # ContextInfo 有 get_weight_in_index(indexcode, stockcode) 但语义不同（单股权重）。
+        """获取索引权重。
+        
+        Args:
+            index_code: 索引code
+        
+        Returns:
+             — 处理结果。
+        """
         return self._native_or_context(
             "get_index_weight",
             lambda: self._raise_unavailable("get_index_weight"),
@@ -913,7 +1690,23 @@ class BigQmtMarketDataProvider:
     def get_trading_calendar(self, market, start_time="", end_time="", tradetimes=False):
         # xtdata SDK: get_trading_calendar(market, start_time='', end_time='', tradetimes=False)
         # ContextInfo 无此方法。SDK 不可用时从 get_trading_dates 派生（不含 tradetimes 时段）。
+        """获取tradingcalendar。
+        
+        Args:
+            market: 市场
+            start_time: starttime
+            end_time: endtime
+            tradetimes: tradetimes
+        
+        Returns:
+             — 处理结果。
+        """
         def _fallback():
+            """fallback。
+            
+            Returns:
+                 — 处理结果。
+            """
             try:
                 dates = self.get_trading_dates(market, start_time, end_time, -1) or []
                 return [str(d) for d in dates]
@@ -926,6 +1719,14 @@ class BigQmtMarketDataProvider:
     def get_trade_times(self, stockcode):
         # xtdata SDK: get_trade_times(stockcode) — 日内交易时段。
         # 传市场（'SH'）或代码（'600000.SH'）。返回 [[开始,结束,类型], ...]。
+        """获取成交times。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._native_or_context(
             "get_trade_times",
             lambda: self._raise_unavailable("get_trade_times"),
@@ -934,6 +1735,14 @@ class BigQmtMarketDataProvider:
 
     def get_cb_info(self, stockcode):
         # xtdata SDK: get_cb_info(stockcode) — 可转债信息。
+        """获取cb信息。
+        
+        Args:
+            stockcode: stockcode
+        
+        Returns:
+             — 处理结果。
+        """
         return self._native_or_context(
             "get_cb_info",
             lambda: self._raise_unavailable("get_cb_info"),
@@ -943,6 +1752,15 @@ class BigQmtMarketDataProvider:
     def is_stock_type(self, stock, tag):
         # xtdata SDK: is_stock_type(stock, tag) — 品种判断（tag 如 'stock'/'fund'/'bond'）。
         # ContextInfo 有 is_stock/is_fund/is_future 但签名不同，这里走 SDK。
+        """判断是否股票type。
+        
+        Args:
+            stock: 股票
+            tag: tag
+        
+        Returns:
+             — 处理结果。
+        """
         return self._native_or_context(
             "is_stock_type",
             lambda: self._raise_unavailable("is_stock_type"),
@@ -956,6 +1774,15 @@ class BigQmtMarketDataProvider:
     def add_sector(self, sector_name, stock_list):
         # xtdata SDK: add_sector(sector_name, stock_list) — 向自定义板块追加股票。
         # ContextInfo 用 create_sector（覆盖式），SDK 用 add_sector（追加式）。
+        """添加sector。
+        
+        Args:
+            sector_name: sectorname
+            stock_list: 股票list
+        
+        Returns:
+             — 处理结果。
+        """
         module = self._native()
         if module is not None and hasattr(module, "add_sector"):
             try:
@@ -967,6 +1794,14 @@ class BigQmtMarketDataProvider:
 
     def remove_sector(self, sector_name):
         # xtdata SDK: remove_sector(sector_name) — 删除自定义板块。
+        """移除sector。
+        
+        Args:
+            sector_name: sectorname
+        
+        Returns:
+             — 处理结果。
+        """
         module = self._native()
         if module is not None and hasattr(module, "remove_sector"):
             try:
@@ -981,6 +1816,11 @@ class BigQmtMarketDataProvider:
 
     def download_cb_data(self):
         # xtdata SDK: download_cb_data() — 下载可转债数据。
+        """downloadcbdata。
+        
+        Returns:
+             — 处理结果。
+        """
         module = self._native()
         if module is not None and hasattr(module, "download_cb_data"):
             try:
@@ -991,6 +1831,11 @@ class BigQmtMarketDataProvider:
 
     def download_history_contracts(self):
         # xtdata SDK: download_history_contracts() — 下载过期合约数据。
+        """downloadhistorycontracts。
+        
+        Returns:
+             — 处理结果。
+        """
         module = self._native()
         if module is not None and hasattr(module, "download_history_contracts"):
             try:
@@ -1001,6 +1846,11 @@ class BigQmtMarketDataProvider:
 
     def download_index_weight(self):
         # xtdata SDK: download_index_weight() — 下载指数权重数据。
+        """download索引权重。
+        
+        Returns:
+             — 处理结果。
+        """
         module = self._native()
         if module is not None and hasattr(module, "download_index_weight"):
             try:
@@ -1011,6 +1861,11 @@ class BigQmtMarketDataProvider:
 
     def download_sector_data(self):
         # xtdata SDK: download_sector_data() — 下载行业板块数据。
+        """downloadsectordata。
+        
+        Returns:
+             — 处理结果。
+        """
         module = self._native()
         if module is not None and hasattr(module, "download_sector_data"):
             try:
@@ -1027,6 +1882,15 @@ class BigQmtMarketDataProvider:
     def datetime_to_timetag(datetime_str, format="%Y%m%d%H%M%S"):
         # xtdata SDK: datetime_to_timetag(datetime, format="%Y%m%d%H%M%S")
         # 把日期时间字符串转成毫秒时间戳。纯本地计算。
+        """datetimetotimetag。
+        
+        Args:
+            datetime_str: datetimestr
+            format: format
+        
+        Returns:
+             — 处理结果。
+        """
         import datetime as _dt
         try:
             dt = _dt.datetime.strptime(str(datetime_str), format)
@@ -1037,6 +1901,15 @@ class BigQmtMarketDataProvider:
     @staticmethod
     def timetag_to_datetime(timetag, format):
         # xtdata SDK: timetag_to_datetime(timetag, format) — 毫秒时间戳转字符串。
+        """timetagtodatetime。
+        
+        Args:
+            timetag: timetag
+            format: format
+        
+        Returns:
+             — 处理结果。
+        """
         import datetime as _dt
         try:
             dt = _dt.datetime.fromtimestamp(int(timetag) / 1000.0)
@@ -1046,6 +1919,11 @@ class BigQmtMarketDataProvider:
 
     @staticmethod
     def _raise_unavailable(method_name):
+        """raiseunavailable。
+        
+        Args:
+            method_name: methodname
+        """
         raise NotImplementedError(
             "%s is unavailable: needs native xtdata SDK quote service "
             "(not reachable in Big QMT full terminal)" % method_name

@@ -143,6 +143,11 @@ EXEC_EVENTS_ENABLED = bool(BIGQMT_REDIS_CONFIG.get("exec_events_enabled", EXEC_E
 
 
 def _apply_config(account_id):
+    """apply配置。
+    
+    Args:
+        account_id: 账号ID
+    """
     account_id = str(account_id or "")
     if account_id:
         set_account_id(account_id)
@@ -205,10 +210,20 @@ def _apply_config(account_id):
 
 
 def configure_runtime_account(account_id):
+    """configureruntimeaccount。
+    
+    Args:
+        account_id: 账号ID
+    """
     _apply_config(account_id)
 
 
 def configure_runtime_redis(redis_config):
+    """configureruntimeredis。
+    
+    Args:
+        redis_config: redis配置
+    """
     global REDIS_HOST, REDIS_PORT, REDIS_DB, REDIS_USERNAME, REDIS_PASSWORD, RPC_ALLOW_ORDER_METHODS, RPC_PROCESS_IN_LISTENER, RPC_BACKGROUND_THREADS, RPC_LISTENER_METHODS, SCHEDULE_ADJUST_ENABLED, SCHEDULE_ADJUST_INTERVAL, FULL_TICK_CACHE_ENABLED, FULL_TICK_DEMAND_TTL_SECONDS, FULL_TICK_CACHE_TTL_SECONDS, FULL_TICK_REFRESH_INTERVAL_SECONDS, FULL_TICK_MARKET_REFRESH_INTERVAL_SECONDS, FULL_TICK_REFRESH_MAX_WALL_SECONDS, FULL_TICK_MAX_REQUESTS, RPC_TRANSPORT, RPC_ZMQ_CONFIG, RPC_MYSQL_CONFIG, DOWNLOAD_JOBS_ENABLED, DOWNLOAD_JOB_CHUNK_SIZE, DOWNLOAD_JOB_MAX_WALL_SECONDS, DOWNLOAD_JOB_TTL_SECONDS, EXEC_EVENTS_ENABLED
     redis_config = dict(redis_config or {})
     REDIS_HOST = redis_config.get("host", REDIS_HOST)
@@ -263,6 +278,14 @@ def configure_runtime_redis(redis_config):
 
 def bind_runtime_api(passorder_func=None, cancel_func=None, get_trade_detail_data_func=None,
                      extra_funcs=None):
+    """绑定runtimeapi。
+    
+    Args:
+        passorder_func: passorderfunc
+        cancel_func: cancelfunc
+        get_trade_detail_data_func: get成交detaildatafunc
+        extra_funcs: extrafuncs
+    """
     bind_qmt_api(
         passorder_func=passorder_func,
         cancel_func=cancel_func,

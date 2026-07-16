@@ -249,6 +249,14 @@ READ_METHODS |= MARKET_DATA_METHODS
 
 
 def _maybe_scalar(value):
+    """maybescalar。
+    
+    Args:
+        value: 值
+    
+    Returns:
+         — 处理结果。
+    """
     item = getattr(value, "item", None)
     if callable(item):
         try:
@@ -259,6 +267,14 @@ def _maybe_scalar(value):
 
 
 def to_jsonable(value):
+    """将当前对象转换为jsonable格式返回。
+    
+    Args:
+        value: 值
+    
+    Returns:
+         — 处理结果。
+    """
     value = _maybe_scalar(value)
     if value is None or isinstance(value, (str, int, float, bool)):
         if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
@@ -324,6 +340,18 @@ class BigQmtRpcHandlers:
         allowed_methods=None,
         qmt_api=None,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            account_id: 账号ID
+            market_data: 市场data
+            position_provider: 持仓provider
+            order_gateway: 订单gateway
+            position_sync_sink: 持仓syncsink
+            allow_order_methods: allow订单methods
+            allowed_methods: allowedmethods
+            qmt_api: qmtapi
+        """
         self.account_id = str(account_id or "")
         self.market_data = market_data
         self.position_provider = position_provider
@@ -342,6 +370,14 @@ class BigQmtRpcHandlers:
             self.allowed_methods = {str(method) for method in allowed_methods}
 
     def _request_account_id(self, params):
+        """请求accountid。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         params = params or {}
         account = params.get("account")
         if isinstance(account, dict):
@@ -352,9 +388,26 @@ class BigQmtRpcHandlers:
         return account_id
 
     def _canonical_method(self, method):
+        """canonicalmethod。
+        
+        Args:
+            method: method
+        
+        Returns:
+             — 处理结果。
+        """
         return METHOD_ALIASES.get(method, method)
 
     def handle(self, method, params=None):
+        """handle。
+        
+        Args:
+            method: method
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         requested_method = str(method or "").strip()
         method = self._canonical_method(requested_method)
         params = dict(params or {})
@@ -372,6 +425,14 @@ class BigQmtRpcHandlers:
         return handler(params)
 
     def _handle_ping(self, params):
+        """handleping。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return {
             "pong": True,
             "account_id": self.account_id,
@@ -379,6 +440,14 @@ class BigQmtRpcHandlers:
         }
 
     def _handle_get_ticks(self, params):
+        """handlegetticks。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         codes = params.get("codes")
         if isinstance(codes, str):
             codes = [codes]
@@ -390,21 +459,54 @@ class BigQmtRpcHandlers:
         return self.market_data.get_ticks(codes)
 
     def _handle_get_instrument(self, params):
+        """handlegetinstrument。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         code = params.get("code")
         if not code:
             raise ValueError("code is required")
         return self.market_data.get_instrument(code)
 
     def _handle_market_data_method(self, method, params):
+        """handle市场datamethod。
+        
+        Args:
+            method: method
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         handler = getattr(self.market_data, method, None)
         if handler is None:
             raise NotImplementedError("market data method is not available: %s" % method)
         return handler(**dict(params or {}))
 
     def _handle_get_positions(self, params):
+        """handlegetpositions。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self.position_provider.get_positions(self._request_account_id(params))
 
     def _handle_query_stock_position(self, params):
+        """handlequery股票持仓。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         stock_code = str(params.get("stock_code") or params.get("code") or "").strip()
         if not stock_code:
             raise ValueError("stock_code is required")
@@ -413,9 +515,25 @@ class BigQmtRpcHandlers:
         return positions.get(normalized_code)
 
     def _handle_get_asset(self, params):
+        """handleget资产。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self.position_provider.get_asset(self._request_account_id(params))
 
     def _handle_query_orders(self, params):
+        """handlequeryorders。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         if self.order_gateway is None:
             raise RuntimeError("order_gateway is not configured")
         orders = self.order_gateway.query_orders(
@@ -431,6 +549,14 @@ class BigQmtRpcHandlers:
         return orders
 
     def _handle_query_trades(self, params):
+        """handlequerytrades。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         if self.order_gateway is None:
             raise RuntimeError("order_gateway is not configured")
         return self.order_gateway.query_trades(
@@ -439,6 +565,14 @@ class BigQmtRpcHandlers:
         )
 
     def _handle_sync_positions(self, params):
+        """handlesyncpositions。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = self._request_account_id(params)
         snapshot = AccountSnapshot(
             account_id=account_id,
@@ -493,65 +627,190 @@ class BigQmtRpcHandlers:
 
     def _handle_query_account_infos(self, params):
         # 账户信息 — get_trade_detail_data(ACCOUNT)
+        """handlequeryaccountinfos。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_trade_detail(params, "ACCOUNT")
 
     def _handle_query_account_status(self, params):
         # 账户状态 — 用 TASK detail type 近似（委托任务状态）
+        """handlequeryaccountstatus。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._query_trade_detail(params, "TASK")
 
     def _handle_query_credit_detail(self, params):
         # 融资融券账户明细 — 官方独立函数 get_debt_contract
+        """handlequerycreditdetail。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_debt_contract", self._request_account_id(params))
 
     def _handle_query_stk_compacts(self, params):
         # 未平仓合约（负债）— 官方 get_unclosed_compacts
+        """handlequerystkcompacts。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_unclosed_compacts", self._request_account_id(params))
 
     def _handle_query_credit_subjects(self, params):
         # 融资标的（担保品）— 官方 get_assure_contract
+        """handlequerycreditsubjects。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_assure_contract", self._request_account_id(params))
 
     def _handle_query_credit_slo_code(self, params):
         # 融券标的 — 官方 get_enable_short_contract
+        """handlequerycreditslocode。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_enable_short_contract", self._request_account_id(params))
 
     def _handle_query_credit_assure(self, params):
         # 担保品合约 — 同 query_credit_subjects（get_assure_contract）
+        """handlequerycreditassure。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_assure_contract", self._request_account_id(params))
 
     def _handle_query_appointment_info(self, params):
         # 新股数据 — 官方 get_ipo_data
+        """handlequeryappointment信息。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_ipo_data", self._request_account_id(params))
 
     def _handle_query_smt_secu_info(self, params):
         # 期权标的持仓 — 官方 get_option_subject_position
+        """handlequerysmtsecu信息。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_option_subject_position", self._request_account_id(params))
 
     def _handle_query_smt_secu_rate(self, params):
         # 组合期权 — 官方 get_comb_option
+        """handlequerysmtsecurate。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_comb_option", self._request_account_id(params))
 
     def _handle_smt_appointment(self, params):
         # SMB/预约打新属于交易类，需要下单通道；当前不支持。
+        """handlesmtappointment。
+        
+        Args:
+            params: params
+        """
         raise NotImplementedError("smt_appointment is not supported via Big QMT RPC")
 
     # 官方交易查询函数（直接暴露）
     def _handle_get_value_by_order_id(self, params):
+        """handleget值by订单id。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         order_id = str(params.get("order_id") or params.get("order_sysid") or "")
         if not order_id:
             raise ValueError("order_id is required")
         return self._call_qmt_global("get_value_by_order_id", order_id)
 
     def _handle_get_last_order_id(self, params):
+        """handlegetlast订单id。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_last_order_id", self._request_account_id(params))
 
     def _handle_get_ipo_data(self, params):
+        """handlegetipodata。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_ipo_data", self._request_account_id(params))
 
     def _handle_get_new_purchase_limit(self, params):
+        """handlegetnewpurchaselimit。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_new_purchase_limit", self._request_account_id(params))
 
     def _handle_get_history_trade_detail_data(self, params):
+        """handlegethistory成交detaildata。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         account_id = self._request_account_id(params)
         detail_type = str(params.get("detail_type") or params.get("datatype") or "DEAL")
         start_date = str(params.get("start_date") or params.get("start_time") or "")
@@ -562,30 +821,102 @@ class BigQmtRpcHandlers:
         return result
 
     def _handle_get_assure_contract(self, params):
+        """handlegetassurecontract。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_assure_contract", self._request_account_id(params))
 
     def _handle_get_enable_short_contract(self, params):
+        """handlegetenableshortcontract。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_enable_short_contract", self._request_account_id(params))
 
     def _handle_get_unclosed_compacts(self, params):
+        """handlegetunclosedcompacts。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_unclosed_compacts", self._request_account_id(params))
 
     def _handle_get_closed_compacts(self, params):
+        """handlegetclosedcompacts。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_closed_compacts", self._request_account_id(params))
 
     def _handle_get_debt_contract(self, params):
+        """handlegetdebtcontract。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_debt_contract", self._request_account_id(params))
 
     def _handle_get_option_subject_position(self, params):
+        """handlegetoptionsubject持仓。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_option_subject_position", self._request_account_id(params))
 
     def _handle_get_comb_option(self, params):
+        """handlegetcomboption。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_comb_option", self._request_account_id(params))
 
     def _handle_get_hkt_exchange_rate(self, params):
+        """handlegethktexchangerate。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         return self._call_qmt_global("get_hkt_exchange_rate")
 
     def _order_action_from_params(self, params):
+        """订单actionfromparams。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         action = str(params.get("action") or "").upper()
         if action:
             return action
@@ -597,6 +928,14 @@ class BigQmtRpcHandlers:
         raise ValueError("action or order_type is required")
 
     def _handle_submit_order(self, params):
+        """handlesubmit订单。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         if self.order_gateway is None:
             raise RuntimeError("order_gateway is not configured")
         price = params.get("price")
@@ -620,6 +959,14 @@ class BigQmtRpcHandlers:
         return self.order_gateway.submit(request)
 
     def _handle_cancel_order(self, params):
+        """handlecancel订单。
+        
+        Args:
+            params: params
+        
+        Returns:
+             — 处理结果。
+        """
         if self.order_gateway is None:
             raise RuntimeError("order_gateway is not configured")
         order_sys_id = str(params.get("order_sys_id") or params.get("order_sysid") or params.get("order_id") or "")
@@ -631,6 +978,15 @@ class BigQmtRpcHandlers:
 
 
 def _bool_value(value, default=False):
+    """bool值。
+    
+    Args:
+        value: 值
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     if value is None or value == "":
         return default
     if isinstance(value, bool):
@@ -675,6 +1031,14 @@ def encode_rpc_request_payload(request):
 
 
 def decode_rpc_request_payload(text):
+    """解码rpc请求载荷。
+    
+    Args:
+        text: text
+    
+    Returns:
+         — 处理结果。
+    """
     text = str(text)
     if not text.startswith(SAFE_B64_PREFIX):
         return text
@@ -706,6 +1070,28 @@ class RedisPubSubRpcService:
         print_prefix="[bigqmt_rpc]",
         transport=None,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            redis_client: redisclient
+            handlers: handlers
+            account_id: 账号ID
+            response_redis_client: 响应redisclient
+            request_channel_template: 请求channel模板
+            request_queue_template: 请求队列模板
+            response_channel_template: 响应channel模板
+            response_list_template: 响应list模板
+            response_key_template: 响应键模板
+            response_ttl_seconds: 响应ttlseconds
+            max_queue_size: max队列size
+            process_in_listener: processinlistener
+            listener_methods: listenermethods
+            background_threads: backgroundthreads
+            queue_poll_interval_seconds: 队列poll间隔seconds
+            debug_log_limit: 调试模式loglimit
+            print_prefix: print前缀
+            transport: transport
+        """
         self.listen_redis = redis_client
         self.redis = response_redis_client or redis_client
         self.handlers = handlers
@@ -759,13 +1145,25 @@ class RedisPubSubRpcService:
 
     @property
     def request_channel(self):
+        """获取请求channel。
+        
+        Returns:
+             — 处理结果。
+        """
         return self.request_channel_template.format(account_id=self.account_id)
 
     @property
     def request_queue(self):
+        """获取请求队列。
+        
+        Returns:
+             — 处理结果。
+        """
         return self.request_queue_template.format(account_id=self.account_id)
 
     def start(self):
+        """start。
+        """
         self._running.set()
         # Delegate thread lifecycle to the transport. The transport invokes the
         # on_request callback with a decoded request dict; enqueue_payload routes
@@ -786,6 +1184,8 @@ class RedisPubSubRpcService:
         print("%s started channel=%s queue=%s" % (self.print_prefix, self.request_channel, self.request_queue))
 
     def stop(self):
+        """stop。
+        """
         self._running.clear()
         try:
             self._transport.stop()
@@ -797,6 +1197,8 @@ class RedisPubSubRpcService:
         self._pubsub = None
 
     def _listen_loop(self):
+        """listenloop。
+        """
         while self._running.is_set():
             try:
                 pubsub = self.listen_redis.pubsub(ignore_subscribe_messages=True)
@@ -823,6 +1225,8 @@ class RedisPubSubRpcService:
                 self._pubsub = None
 
     def _queue_loop(self):
+        """队列loop。
+        """
         while self._running.is_set():
             try:
                 if self.debug_log_limit > 0:
@@ -845,6 +1249,12 @@ class RedisPubSubRpcService:
                 time.sleep(1.0)
 
     def _handle_received_payload(self, raw_payload, source):
+        """handlereceived载荷。
+        
+        Args:
+            raw_payload: raw载荷
+            source: source
+        """
         self._received_count += 1
         if self._received_count <= self.debug_log_limit:
             try:
@@ -861,6 +1271,11 @@ class RedisPubSubRpcService:
         self.enqueue_payload(raw_payload)
 
     def enqueue_payload(self, raw_payload):
+        """enqueue载荷。
+        
+        Args:
+            raw_payload: raw载荷
+        """
         payload = self._loads(raw_payload)
         if self._should_process_in_listener(payload):
             self.process_request(payload)
@@ -868,6 +1283,14 @@ class RedisPubSubRpcService:
         self.pending.put_nowait(payload)
 
     def _should_process_in_listener(self, payload):
+        """shouldprocessinlistener。
+        
+        Args:
+            payload: 载荷
+        
+        Returns:
+             — 处理结果。
+        """
         if not self.process_in_listener:
             return False
         method = str((payload or {}).get("method") or "")
@@ -877,6 +1300,14 @@ class RedisPubSubRpcService:
         return canonical in self.listener_methods
 
     def _expand_listener_methods(self, listener_methods):
+        """expandlistenermethods。
+        
+        Args:
+            listener_methods: listenermethods
+        
+        Returns:
+             — 处理结果。
+        """
         methods = set()
         for method in listener_methods or ():
             method = str(method)
@@ -889,6 +1320,14 @@ class RedisPubSubRpcService:
         return methods
 
     def _loads(self, raw_payload):
+        """loads。
+        
+        Args:
+            raw_payload: raw载荷
+        
+        Returns:
+             — 处理结果。
+        """
         if isinstance(raw_payload, dict):
             return dict(raw_payload)
         text = decode_text(raw_payload)
@@ -899,6 +1338,14 @@ class RedisPubSubRpcService:
         return payload
 
     def drain_pending(self, max_items=20):
+        """drainpending。
+        
+        Args:
+            max_items: maxitems
+        
+        Returns:
+             — 处理结果。
+        """
         processed = 0
         for _ in range(int(max_items)):
             try:
@@ -913,6 +1360,14 @@ class RedisPubSubRpcService:
         # Delegate to the transport when it owns the wire directly; for Redis
         # the transport's drain drives _handle_received_payload (which honors
         # the inline-vs-deferred fork), matching the original semantics.
+        """drain请求队列。
+        
+        Args:
+            max_items: maxitems
+        
+        Returns:
+             — 处理结果。
+        """
         transport_drain = getattr(self._transport, "drain_request_queue", None)
         if transport_drain is not None and not isinstance(self._transport, type(None)):
             return transport_drain(max_items=max_items)
@@ -926,6 +1381,14 @@ class RedisPubSubRpcService:
         return processed
 
     def process_request(self, request):
+        """处理请求。
+        
+        Args:
+            request: 请求
+        
+        Returns:
+             — 处理结果。
+        """
         request = dict(request or {})
         request_id = str(request.get("request_id") or request.get("id") or uuid.uuid4().hex)
         account_id = str(request.get("account_id") or self.account_id or "")
@@ -954,6 +1417,16 @@ class RedisPubSubRpcService:
         return response
 
     def _format_response_target(self, template, account_id, request_id):
+        """format响应target。
+        
+        Args:
+            template: 模板
+            account_id: 账号ID
+            request_id: 请求id
+        
+        Returns:
+             — 处理结果。
+        """
         if not template:
             return ""
         return template.format(account_id=account_id, request_id=request_id)
@@ -961,16 +1434,37 @@ class RedisPubSubRpcService:
     def _publish_response(self, request, response):
         # Delegate to the transport (RedisTransport fans out to key/list/channel;
         # ZMQ/MySQL transports use their native reply path).
+        """publish响应。
+        
+        Args:
+            request: 请求
+            response: 响应
+        """
         self._transport.send_response(request, response)
         self._published_count = getattr(self._transport, "_published_count", self._published_count)
 
     def _response_clients(self):
+        """响应clients。
+        
+        Returns:
+             — 处理结果。
+        """
         clients = [self.redis]
         if self.listen_redis is not self.redis:
             clients.append(self.listen_redis)
         return clients
 
     def _write_response_key(self, response_key, ttl_seconds, payload):
+        """write响应键。
+        
+        Args:
+            response_key: 响应键
+            ttl_seconds: ttlseconds
+            payload: 载荷
+        
+        Returns:
+             — 处理结果。
+        """
         first_error = None
         wrote = 0
         for client in self._response_clients():
@@ -988,6 +1482,16 @@ class RedisPubSubRpcService:
         return wrote
 
     def _push_response_list(self, response_list, ttl_seconds, payload):
+        """push响应list。
+        
+        Args:
+            response_list: 响应list
+            ttl_seconds: ttlseconds
+            payload: 载荷
+        
+        Returns:
+             — 处理结果。
+        """
         first_error = None
         pushed = 0
         for client in self._response_clients():
@@ -1004,6 +1508,15 @@ class RedisPubSubRpcService:
         return pushed
 
     def _publish_response_channel(self, response_channel, payload):
+        """publish响应channel。
+        
+        Args:
+            response_channel: 响应channel
+            payload: 载荷
+        
+        Returns:
+             — 处理结果。
+        """
         first_error = None
         receivers = 0
         published = 0

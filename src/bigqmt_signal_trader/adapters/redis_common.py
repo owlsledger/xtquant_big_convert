@@ -4,6 +4,15 @@ import os
 
 
 def _float_or_none(value, default=None):
+    """floatornone。
+    
+    Args:
+        value: 值
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     if value is None:
         return default
     if value == "":
@@ -15,6 +24,14 @@ def _float_or_none(value, default=None):
 
 
 def build_redis_client(config=None):
+    """构建redisclient。
+    
+    Args:
+        config: 配置
+    
+    Returns:
+         — 处理结果。
+    """
     config = config or {}
     try:
         import redis
@@ -47,10 +64,26 @@ def build_redis_client(config=None):
 
 
 def decode_text(value):
+    """解码text。
+    
+    Args:
+        value: 值
+    
+    Returns:
+         — 处理结果。
+    """
     if isinstance(value, bytes):
         return value.decode("utf-8")
     return str(value)
 
 
 def redis_mapping_to_text(mapping):
+    """redismappingtotext。
+    
+    Args:
+        mapping: mapping
+    
+    Returns:
+         — 处理结果。
+    """
     return {decode_text(key): decode_text(value) for key, value in (mapping or {}).items()}

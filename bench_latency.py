@@ -47,6 +47,15 @@ REDIS = _load_redis_config()
 
 
 def bench(r, method, params, n=20, timeout=6):
+    """bench。
+    
+    Args:
+        r: r
+        method: method
+        params: params
+        n: n
+        timeout: 超时(秒)
+    """
     lats = []
     errors = 0
     for i in range(n):
@@ -87,6 +96,8 @@ def bench(r, method, params, n=20, timeout=6):
 
 
 def main():
+    """main。
+    """
     r = redis.Redis(**REDIS)
     # warmup
     try:

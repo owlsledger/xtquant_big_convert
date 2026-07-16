@@ -53,11 +53,28 @@ def _default_zmq_port(account_id):
 
 
 def _default_zmq_address(account_id, host=None):
+    """defaultzmqaddress。
+    
+    Args:
+        account_id: 账号ID
+        host: host
+    
+    Returns:
+         — 处理结果。
+    """
     host = host or DEFAULT_ZMQ_HOST
     return "tcp://%s:%d" % (host, _default_zmq_port(account_id))
 
 
 def _loads(raw):
+    """loads。
+    
+    Args:
+        raw: raw
+    
+    Returns:
+         — 处理结果。
+    """
     if isinstance(raw, dict):
         return dict(raw)
     text = decode_text(raw)
@@ -94,6 +111,24 @@ class ZmqTransport(RpcTransport):
         discovery_ttl_seconds=300,
         port_scan_range=50,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            bind_address: bindaddress
+            connect_address: connectaddress
+            host: host
+            port: port
+            account_id: 账号ID
+            print_prefix: print前缀
+            io_threads: iothreads
+            recv_timeout_seconds: recv超时(秒)seconds
+            server_hwm: serverhwm
+            client_linger_ms: clientlingerms
+            discovery_redis_client: discoveryredisclient
+            discovery_key_template: discovery键模板
+            discovery_ttl_seconds: discoveryttlseconds
+            port_scan_range: portscanrange
+        """
         super(ZmqTransport, self).__init__(account_id=account_id, print_prefix=print_prefix)
         # Address resolution order: explicit bind_address/connect_address win;
         # otherwise build tcp://host:port from host/port (port defaults to a
@@ -136,6 +171,16 @@ class ZmqTransport(RpcTransport):
     # -- construction helper ----------------------------------------------
     @classmethod
     def from_config(cls, config, account_id="", print_prefix="[bigqmt_rpc]"):
+        """从配置转换为当前类型。
+        
+        Args:
+            config: 配置
+            account_id: 账号ID
+            print_prefix: print前缀
+        
+        Returns:
+             — 处理结果。
+        """
         config = dict(config or {})
         return cls(
             bind_address=config.get("bind_address"),
@@ -158,6 +203,11 @@ class ZmqTransport(RpcTransport):
 
     # -- shared zmq context -----------------------------------------------
     def _ensure_zmq(self):
+        """ensurezmq。
+        
+        Returns:
+             — 处理结果。
+        """
         if self._zmq is None:
             try:
                 import zmq  # noqa: F401
@@ -218,6 +268,11 @@ class ZmqTransport(RpcTransport):
         raise last_error
 
     def _publish_discovery(self, address):
+        """publishdiscovery。
+        
+        Args:
+            address: address
+        """
         if self.discovery_redis_client is None:
             return
         key = self.discovery_key_template.format(account_id=self.account_id)
@@ -229,6 +284,8 @@ class ZmqTransport(RpcTransport):
             print("%s zmq discovery publish failed: %s" % (self.print_prefix, exc))
 
     def _clear_discovery(self):
+        """cleardiscovery。
+        """
         if self.discovery_redis_client is None:
             return
         key = self.discovery_key_template.format(account_id=self.account_id)
@@ -238,6 +295,12 @@ class ZmqTransport(RpcTransport):
             pass
 
     def start_receiving(self, on_request, background_threads=True):
+        """启动receiving。
+        
+        Args:
+            on_request: on请求
+            background_threads: backgroundthreads
+        """
         super(ZmqTransport, self).start_receiving(on_request)
         zmq, ctx = self._ensure_zmq()
         self._bind_with_fallback()
@@ -257,6 +320,8 @@ class ZmqTransport(RpcTransport):
         )
 
     def _router_loop(self):
+        """routerloop。
+        """
         zmq = self._zmq
         try:
             while self._running:
@@ -305,6 +370,12 @@ class ZmqTransport(RpcTransport):
             self._router = None
 
     def send_response(self, request, response):
+        """发送响应。
+        
+        Args:
+            request: 请求
+            response: 响应
+        """
         if self._router is None:
             raise TransportError("zmq server socket is not bound")
         request_id = str(
@@ -344,6 +415,11 @@ class ZmqTransport(RpcTransport):
         return _default_zmq_address(self.account_id)
 
     def _lookup_discovery(self):
+        """lookupdiscovery。
+        
+        Returns:
+             — 处理结果。
+        """
         if self.discovery_redis_client is None:
             return None
         key = self.discovery_key_template.format(account_id=self.account_id)
@@ -360,6 +436,11 @@ class ZmqTransport(RpcTransport):
         return text or None
 
     def _ensure_dealer(self):
+        """ensuredealer。
+        
+        Returns:
+             — 处理结果。
+        """
         zmq, ctx = self._ensure_zmq()
         if self._dealer is None:
             address = self._resolve_connect_address()
@@ -373,6 +454,16 @@ class ZmqTransport(RpcTransport):
         return self._dealer
 
     def send_request(self, request, timeout_seconds, **_kwargs):
+        """发送请求。
+        
+        Args:
+            request: 请求
+            timeout_seconds: 超时(秒)seconds
+            _kwargs: kwargs
+        
+        Returns:
+             — 处理结果。
+        """
         zmq = self._zmq or self._ensure_zmq()[0]
         with self._client_lock:
             dealer = self._ensure_dealer()
@@ -402,6 +493,8 @@ class ZmqTransport(RpcTransport):
 
     # -- lifecycle --------------------------------------------------------
     def stop(self):
+        """stop。
+        """
         super(ZmqTransport, self).stop()
         # Clear _running so the router loop exits; the loop closes its own
         # socket (closing cross-thread trips a Windows signaler abort).

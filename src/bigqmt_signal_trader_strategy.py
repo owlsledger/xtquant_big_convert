@@ -62,21 +62,44 @@ _adjust_tick_stats = {"last_ts": 0.0, "count": 0, "window_start": 0.0, "sum": 0.
 
 
 def set_app_factory(factory):
+    """设置appfactory。
+    
+    Args:
+        factory: factory
+    """
     global _app_factory
     _app_factory = factory
 
 
 def set_account_id(account_id):
+    """设置accountid。
+    
+    Args:
+        account_id: 账号ID
+    """
     global _account_id
     _account_id = str(account_id or "")
 
 
 def configure(**kwargs):
+    """configure。
+    
+    Args:
+        kwargs: kwargs
+    """
     _config.update(kwargs)
 
 
 def bind_qmt_api(passorder_func=None, cancel_func=None, get_trade_detail_data_func=None,
                  extra_funcs=None):
+    """绑定qmtapi。
+    
+    Args:
+        passorder_func: passorderfunc
+        cancel_func: cancelfunc
+        get_trade_detail_data_func: get成交detaildatafunc
+        extra_funcs: extrafuncs
+    """
     if passorder_func is not None:
         _qmt_api["passorder"] = passorder_func
     if cancel_func is not None:
@@ -93,6 +116,8 @@ def bind_qmt_api(passorder_func=None, cancel_func=None, get_trade_detail_data_fu
 
 
 def reset_app():
+    """重置app。
+    """
     global _adjust_logged, _rpc_service, _scheduled_adjust, _last_full_tick_refresh_at, _last_full_tick_market_refresh_at
     _adjust_logged = False
     _scheduled_adjust = False
@@ -109,6 +134,14 @@ def reset_app():
 
 
 def _resolve_runtime_name(name):
+    """resolveruntimename。
+    
+    Args:
+        name: name
+    
+    Returns:
+         — 处理结果。
+    """
     if name in _qmt_api:
         return _qmt_api[name]
     if name in globals():
@@ -121,6 +154,14 @@ def _resolve_runtime_name(name):
 
 
 def _detect_account_id(context_info=None):
+    """detectaccountid。
+    
+    Args:
+        context_info: context信息
+    
+    Returns:
+         — 处理结果。
+    """
     if _account_id:
         return _account_id
     try:
@@ -180,6 +221,11 @@ _EXTRA_QMT_GLOBAL_FUNCS = (
 
 
 def _build_config():
+    """build配置。
+    
+    Returns:
+         — 处理结果。
+    """
     config = dict(_config)
     if _account_id:
         config["account_id"] = _account_id
@@ -195,12 +241,29 @@ def _build_config():
 
 
 def _build_app(context_info):
+    """buildapp。
+    
+    Args:
+        context_info: context信息
+    
+    Returns:
+         — 处理结果。
+    """
     if _app_factory is not None:
         return _app_factory(context_info)
     return _default_build_app(context_info, _build_config())
 
 
 def _config_bool(value, default=False):
+    """配置bool。
+    
+    Args:
+        value: 值
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     if value is None:
         return default
     if isinstance(value, bool):
@@ -212,6 +275,14 @@ _REDIS_TRANSPORT_NAMES = ("redis", "", "default")
 
 
 def _is_redis_transport(transport_name):
+    """isredistransport。
+    
+    Args:
+        transport_name: transportname
+    
+    Returns:
+         — 处理结果。
+    """
     return str(transport_name or "redis").lower() in _REDIS_TRANSPORT_NAMES
 
 
@@ -230,6 +301,16 @@ def _resolve_background_threads(transport_name, configured):
 
 
 def _build_rpc_service(context_info, app, config):
+    """buildrpcservice。
+    
+    Args:
+        context_info: context信息
+        app: app
+        config: 配置
+    
+    Returns:
+         — 处理结果。
+    """
     rpc_config = dict(config.get("rpc") or {})
     enabled = _config_bool(config.get("enable_rpc"), False) or _config_bool(rpc_config.get("enabled"), False)
     if not enabled:
@@ -332,6 +413,16 @@ def _build_rpc_service(context_info, app, config):
 
 
 def _start_rpc_service(context_info, app, config):
+    """startrpcservice。
+    
+    Args:
+        context_info: context信息
+        app: app
+        config: 配置
+    
+    Returns:
+         — 处理结果。
+    """
     global _rpc_service
     if _rpc_service is not None:
         return _rpc_service
@@ -342,6 +433,14 @@ def _start_rpc_service(context_info, app, config):
 
 
 def _drain_rpc_service(config):
+    """drainrpcservice。
+    
+    Args:
+        config: 配置
+    
+    Returns:
+         — 处理结果。
+    """
     if _rpc_service is None:
         return 0
     rpc_config = dict(config.get("rpc") or {})
@@ -354,6 +453,15 @@ def _drain_rpc_service(config):
 
 
 def _refresh_full_tick_cache(context_info, config):
+    """refreshfulltickcache。
+    
+    Args:
+        context_info: context信息
+        config: 配置
+    
+    Returns:
+         — 处理结果。
+    """
     global _last_full_tick_refresh_at, _last_full_tick_market_refresh_at
     cache_config = dict(config.get("full_tick_cache") or {})
     if not _config_bool(cache_config.get("enabled"), True):
@@ -424,6 +532,12 @@ def _refresh_full_tick_cache(context_info, config):
 
 
 def _schedule_adjust_if_needed(context_info, config):
+    """schedule复权因子ifneeded。
+    
+    Args:
+        context_info: context信息
+        config: 配置
+    """
     global _scheduled_adjust
     if _scheduled_adjust:
         return
@@ -506,6 +620,8 @@ def _gil_probe_loop():
 
 
 def _start_latency_probe():
+    """start延迟probe。
+    """
     global _latency_probe_started
     if _latency_probe_started or not _LATENCY_PROBE_ENABLED:
         return
@@ -516,6 +632,8 @@ def _start_latency_probe():
 
 
 def _apply_gil_tuning():
+    """applygiltuning。
+    """
     try:
         sys.setswitchinterval(_GIL_SWITCH_INTERVAL)
         print("[bigqmt_signal_trader] gil switch interval set to %.4fs" % _GIL_SWITCH_INTERVAL)
@@ -524,6 +642,14 @@ def _apply_gil_tuning():
 
 
 def init(ContextInfo):
+    """init。
+    
+    Args:
+        ContextInfo: context信息
+    
+    Returns:
+         — 处理结果。
+    """
     detected_account_id = _detect_account_id(ContextInfo)
     if detected_account_id and not _account_id:
         set_account_id(detected_account_id)
@@ -591,6 +717,14 @@ def _adjust_phase(name, fn, *args):
 
 
 def adjust(ContextInfo):
+    """复权因子。
+    
+    Args:
+        ContextInfo: context信息
+    
+    Returns:
+         — 处理结果。
+    """
     global _adjust_logged
     _record_adjust_tick()
     config = _build_config()
@@ -643,11 +777,29 @@ def _publish_exec_event(kind, obj):
 
 
 def on_order(ContextInfo, order):
+    """on订单。
+    
+    Args:
+        ContextInfo: context信息
+        order: 订单
+    
+    Returns:
+         — 处理结果。
+    """
     _publish_exec_event("order", order)
     return forward_order_event(BigQmtRuntimeAdapter.to_order_event(order))
 
 
 def on_trade(ContextInfo, trade):
+    """on成交。
+    
+    Args:
+        ContextInfo: context信息
+        trade: 成交
+    
+    Returns:
+         — 处理结果。
+    """
     _publish_exec_event("trade", trade)
     return forward_trade_event(BigQmtRuntimeAdapter.to_trade_event(trade))
 
@@ -663,4 +815,12 @@ def deal_callback(ContextInfo, dealInfo):
 
 
 def sync_positions(ContextInfo):
+    """同步positions。
+    
+    Args:
+        ContextInfo: context信息
+    
+    Returns:
+         — 处理结果。
+    """
     return sync_positions_app("manual")

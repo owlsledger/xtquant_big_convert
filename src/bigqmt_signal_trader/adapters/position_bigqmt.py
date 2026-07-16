@@ -5,6 +5,16 @@ from ..models import AssetSnapshot, PositionSnapshot
 
 
 def _attr(obj, names, default=None):
+    """attr。
+    
+    Args:
+        obj: obj
+        names: names
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     for name in names:
         if hasattr(obj, name):
             value = getattr(obj, name)
@@ -14,6 +24,15 @@ def _attr(obj, names, default=None):
 
 
 def _full_code(instrument_id, exchange_id):
+    """fullcode。
+    
+    Args:
+        instrument_id: instrumentid
+        exchange_id: exchangeid
+    
+    Returns:
+         — 处理结果。
+    """
     code = str(instrument_id or "").strip().upper()
     market = str(exchange_id or "").strip().upper()
     if "." in code:
@@ -24,16 +43,37 @@ def _full_code(instrument_id, exchange_id):
 
 
 class BigQmtPositionProvider:
+    """BigQmtPosition提供者，提供 get_positions, get_asset 等方法。
+    """
     def __init__(self, get_trade_detail_data_func, account_type="STOCK"):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            get_trade_detail_data_func: get成交detaildatafunc
+            account_type: 账号类型
+        """
         self.get_trade_detail_data = get_trade_detail_data_func
         self.account_type = account_type
 
     def _require_query_func(self):
+        """requirequeryfunc。
+        
+        Returns:
+             — 处理结果。
+        """
         if self.get_trade_detail_data is None:
             raise RuntimeError("get_trade_detail_data is not available in Big QMT runtime")
         return self.get_trade_detail_data
 
     def get_positions(self, account_id):
+        """获取positions。
+        
+        Args:
+            account_id: 账号ID
+        
+        Returns:
+             — 处理结果。
+        """
         query = self._require_query_func()
         # QMT's get_trade_detail_data can raise on POSITION queries in some
         # states (e.g. context not bound). Degrade to empty like get_asset does.
@@ -57,6 +97,14 @@ class BigQmtPositionProvider:
         return positions
 
     def get_asset(self, account_id):
+        """获取资产。
+        
+        Args:
+            account_id: 账号ID
+        
+        Returns:
+             — 处理结果。
+        """
         query = self._require_query_func()
         rows = []
         for detail_type in ("ACCOUNT", "ASSET"):

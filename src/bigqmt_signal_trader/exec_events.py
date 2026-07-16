@@ -42,14 +42,40 @@ _SELL_DIRECTIONS = {ENTRUST_SELL, str(ENTRUST_SELL), 24, "24", "SELL", "sell", "
 
 
 def order_channel(account_id):
+    """订单channel。
+    
+    Args:
+        account_id: 账号ID
+    
+    Returns:
+         — 处理结果。
+    """
     return ORDER_CHANNEL_TEMPLATE.format(account_id=str(account_id or ""))
 
 
 def trade_channel(account_id):
+    """成交channel。
+    
+    Args:
+        account_id: 账号ID
+    
+    Returns:
+         — 处理结果。
+    """
     return TRADE_CHANNEL_TEMPLATE.format(account_id=str(account_id or ""))
 
 
 def _attr(obj, names, default=None):
+    """attr。
+    
+    Args:
+        obj: obj
+        names: names
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     for name in names:
         if isinstance(obj, dict):
             if name in obj and obj[name] is not None:
@@ -62,6 +88,14 @@ def _attr(obj, names, default=None):
 
 
 def _action_from_direction(direction):
+    """actionfromdirection。
+    
+    Args:
+        direction: direction
+    
+    Returns:
+         — 处理结果。
+    """
     if direction in _BUY_DIRECTIONS:
         return "BUY"
     if direction in _SELL_DIRECTIONS:
@@ -113,6 +147,17 @@ def normalize_trade_event(trade, account_id=""):
 
 
 def _publish(redis_client, channel, event, maxlen=2000):
+    """publish。
+    
+    Args:
+        redis_client: redisclient
+        channel: channel
+        event: event
+        maxlen: maxlen
+    
+    Returns:
+         — 处理结果。
+    """
     raw = json.dumps(event, ensure_ascii=False, default=str)
     try:
         redis_client.xadd(channel, {"payload": raw}, maxlen=maxlen, approximate=True)
@@ -123,8 +168,28 @@ def _publish(redis_client, channel, event, maxlen=2000):
 
 
 def publish_order_event(redis_client, account_id, event):
+    """publish订单event。
+    
+    Args:
+        redis_client: redisclient
+        account_id: 账号ID
+        event: event
+    
+    Returns:
+         — 处理结果。
+    """
     return _publish(redis_client, order_channel(account_id), event)
 
 
 def publish_trade_event(redis_client, account_id, event):
+    """publish成交event。
+    
+    Args:
+        redis_client: redisclient
+        account_id: 账号ID
+        event: event
+    
+    Returns:
+         — 处理结果。
+    """
     return _publish(redis_client, trade_channel(account_id), event)

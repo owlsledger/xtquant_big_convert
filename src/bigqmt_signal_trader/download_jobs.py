@@ -38,18 +38,51 @@ _ACTIVE_STATES = (PENDING, RUNNING)
 
 
 def queue_key(account_id):
+    """队列键。
+    
+    Args:
+        account_id: 账号ID
+    
+    Returns:
+         — 处理结果。
+    """
     return QUEUE_KEY_TEMPLATE.format(account_id=str(account_id or ""))
 
 
 def job_key(account_id, job_id):
+    """任务键。
+    
+    Args:
+        account_id: 账号ID
+        job_id: 任务id
+    
+    Returns:
+         — 处理结果。
+    """
     return JOB_KEY_TEMPLATE.format(account_id=str(account_id or ""), job_id=str(job_id or ""))
 
 
 def current_key(account_id):
+    """current键。
+    
+    Args:
+        account_id: 账号ID
+    
+    Returns:
+         — 处理结果。
+    """
     return CURRENT_KEY_TEMPLATE.format(account_id=str(account_id or ""))
 
 
 def _text(value):
+    """text。
+    
+    Args:
+        value: 值
+    
+    Returns:
+         — 处理结果。
+    """
     if value is None:
         return ""
     if isinstance(value, bytes):
@@ -71,10 +104,26 @@ _ALPHA_TO_DIGIT = str.maketrans("ghijklmnop", "0123456789")
 
 
 def _enc(text_value):
+    """enc。
+    
+    Args:
+        text_value: text值
+    
+    Returns:
+         — 处理结果。
+    """
     return _text(text_value).encode("utf-8").hex().translate(_DIGIT_TO_ALPHA)
 
 
 def _dec(token):
+    """dec。
+    
+    Args:
+        token: 令牌
+    
+    Returns:
+         — 处理结果。
+    """
     text = _text(token)
     if not text:
         return None
@@ -159,12 +208,29 @@ def wait_download_job(
 
 
 def _write_job(redis_client, account_id, job, job_ttl_seconds):
+    """write任务。
+    
+    Args:
+        redis_client: redisclient
+        account_id: 账号ID
+        job: 任务
+        job_ttl_seconds: 任务ttlseconds
+    """
     job["updated_at_ts"] = time.time()
     ttl = int(max(1, job_ttl_seconds))
     redis_client.setex(job_key(account_id, job["job_id"]), ttl, _enc(json.dumps(job, ensure_ascii=False)))
 
 
 def _acquire_current_job(redis_client, account_id):
+    """acquirecurrent任务。
+    
+    Args:
+        redis_client: redisclient
+        account_id: 账号ID
+    
+    Returns:
+         — 处理结果。
+    """
     ckey = current_key(account_id)
     current_id = _dec(redis_client.get(ckey))
     if current_id:
@@ -185,6 +251,17 @@ def _acquire_current_job(redis_client, account_id):
 
 
 def _download_chunk(market_data, method, chunk, period, start_time, end_time, incrementally):
+    """downloadchunk。
+    
+    Args:
+        market_data: 市场data
+        method: method
+        chunk: chunk
+        period: period
+        start_time: starttime
+        end_time: endtime
+        incrementally: incrementally
+    """
     if method == "download_history_data":
         for code in chunk:
             market_data.download_history_data(code, period, start_time, end_time, incrementally)

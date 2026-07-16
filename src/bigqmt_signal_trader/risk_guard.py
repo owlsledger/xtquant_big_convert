@@ -5,7 +5,17 @@ from .models import SignalAction, TradeSignal
 
 
 class RiskDecision:
+    """风险decision。
+    """
     def __init__(self, allowed, reason="", volume=0, stock_code=""):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            allowed: allowed
+            reason: reason
+            volume: volume
+            stock_code: 股票代码
+        """
         self.allowed = allowed
         self.reason = reason
         self.volume = volume
@@ -13,6 +23,15 @@ class RiskDecision:
 
 
 def build_trade_volume(signal: TradeSignal, positions):
+    """构建成交volume。
+    
+    Args:
+        signal: TradeSignal — 信号
+        positions: positions
+    
+    Returns:
+         — 处理结果。
+    """
     code = normalize_stock_code(signal.stock_code)
     if signal.action == SignalAction.BUY:
         return RiskDecision(True, volume=round_buy_volume(code, signal.amount), stock_code=code)
@@ -37,6 +56,16 @@ def build_trade_volume(signal: TradeSignal, positions):
 
 
 def validate_signal(signal, now, positions):
+    """校验信号。
+    
+    Args:
+        signal: 信号
+        now: now
+        positions: positions
+    
+    Returns:
+         — 处理结果。
+    """
     if signal.is_expired(now):
         return RiskDecision(False, "expired", stock_code=signal.stock_code)
     decision = build_trade_volume(signal, positions)

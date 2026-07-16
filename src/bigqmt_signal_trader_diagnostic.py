@@ -10,6 +10,14 @@ _PROBED = False
 
 
 def _resolve_runtime_name(name):
+    """resolveruntimename。
+    
+    Args:
+        name: name
+    
+    Returns:
+         — 处理结果。
+    """
     if name in globals():
         return globals()[name]
     try:
@@ -20,15 +28,35 @@ def _resolve_runtime_name(name):
 
 
 def _safe_attr(obj, name, default=None):
+    """safeattr。
+    
+    Args:
+        obj: obj
+        name: name
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     return getattr(obj, name, default)
 
 
 def _detect_account():
+    """detectaccount。
+    
+    Returns:
+         — 处理结果。
+    """
     account_value = _resolve_runtime_name("account")
     return str(account_value or "")
 
 
 def _probe_market(ContextInfo):
+    """probe市场。
+    
+    Args:
+        ContextInfo: context信息
+    """
     code = "000300.SH"
     try:
         ticks = ContextInfo.get_full_tick([code])
@@ -67,6 +95,11 @@ def _probe_market(ContextInfo):
 
 
 def _probe_positions(account_id):
+    """probepositions。
+    
+    Args:
+        account_id: 账号ID
+    """
     query = _resolve_runtime_name("get_trade_detail_data")
     if query is None:
         print("[bigqmt_diagnostic] position failed: get_trade_detail_data missing")
@@ -94,6 +127,12 @@ def _probe_positions(account_id):
 
 
 def _probe(ContextInfo, reason):
+    """probe。
+    
+    Args:
+        ContextInfo: context信息
+        reason: reason
+    """
     global _PROBED
     if _PROBED:
         return
@@ -105,6 +144,11 @@ def _probe(ContextInfo, reason):
 
 
 def init(ContextInfo):
+    """init。
+    
+    Args:
+        ContextInfo: context信息
+    """
     global _ACCOUNT_ID
     _ACCOUNT_ID = _detect_account()
     if _ACCOUNT_ID and hasattr(ContextInfo, "set_account"):
@@ -114,18 +158,52 @@ def init(ContextInfo):
 
 
 def handlebar(ContextInfo):
+    """处理bar。
+    
+    Args:
+        ContextInfo: context信息
+    
+    Returns:
+         — 处理结果。
+    """
     if hasattr(ContextInfo, "is_last_bar") and not ContextInfo.is_last_bar():
         return None
     return _probe(ContextInfo, "handlebar")
 
 
 def adjust(ContextInfo):
+    """复权因子。
+    
+    Args:
+        ContextInfo: context信息
+    
+    Returns:
+         — 处理结果。
+    """
     return handlebar(ContextInfo)
 
 
 def order_callback(ContextInfo, orderInfo):
+    """订单回调函数。
+    
+    Args:
+        ContextInfo: context信息
+        orderInfo: 订单信息
+    
+    Returns:
+         — 处理结果。
+    """
     return None
 
 
 def deal_callback(ContextInfo, dealInfo):
+    """deal回调函数。
+    
+    Args:
+        ContextInfo: context信息
+        dealInfo: deal信息
+    
+    Returns:
+         — 处理结果。
+    """
     return None

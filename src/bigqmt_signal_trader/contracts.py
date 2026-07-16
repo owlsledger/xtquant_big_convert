@@ -23,6 +23,8 @@ from .models import (
 
 
 class SignalSource(Protocol):
+    """信号source，继承自 Protocol，提供 fetch, ack 等方法。
+    """
     def fetch(self, account_id: str, limit: int) -> List[TradeSignal]:
         ...
 
@@ -31,6 +33,8 @@ class SignalSource(Protocol):
 
 
 class MarketDataProvider(Protocol):
+    """MarketData提供者，继承自 Protocol，提供 get_ticks, get_instrument 等方法。
+    """
     def get_ticks(self, codes: List[str]) -> Dict[str, dict]:
         ...
 
@@ -39,6 +43,8 @@ class MarketDataProvider(Protocol):
 
 
 class PositionProvider(Protocol):
+    """Position提供者，继承自 Protocol，提供 get_positions, get_asset 等方法。
+    """
     def get_positions(self, account_id: str) -> Dict[str, PositionSnapshot]:
         ...
 
@@ -47,6 +53,8 @@ class PositionProvider(Protocol):
 
 
 class OrderGateway(Protocol):
+    """Order网关，继承自 Protocol，提供 submit, cancel, query_orders, query_trades 等方法。
+    """
     def submit(self, request: OrderRequest) -> OrderSubmitResult:
         ...
 
@@ -61,11 +69,15 @@ class OrderGateway(Protocol):
 
 
 class PositionSyncSink(Protocol):
+    """持仓syncsink，继承自 Protocol，提供 publish 等方法。
+    """
     def publish(self, snapshot: AccountSnapshot) -> None:
         ...
 
 
 class StateStore(Protocol):
+    """statestore，继承自 Protocol，提供 claim, mark_submitted, mark_finished 等方法。
+    """
     def claim(self, signal: TradeSignal, consumer_id: str) -> bool:
         ...
 
@@ -77,5 +89,7 @@ class StateStore(Protocol):
 
 
 class RuntimeAdapter(Protocol):
+    """Runtime适配器，继承自 Protocol，提供 now 等方法。
+    """
     def now(self) -> _dt.datetime:
         ...

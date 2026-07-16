@@ -101,7 +101,7 @@ Copy-Item -LiteralPath '<REPO_ROOT>\src\bigqmt_signal_trader_dryrun.py' `
   -Force
 
 Copy-Item -LiteralPath '<REPO_ROOT>\src\bigqmt_signal_trader_redis_dryrun.py' `
-  -Destination 'D:\guoseniquant\python\bigqmt_signal_trader_redis_dryrun.py' `
+  -Destination 'D:\guojinqmt\python\bigqmt_signal_trader_redis_dryrun.py' `
   -Force
 ```
 
@@ -184,7 +184,7 @@ configure(mode="dryrun", account_id=ACCOUNT_ID or "dryrun")
 已经新增安全观察入口：
 
 ```text
-D:\guoseniquant\python\bigqmt_signal_trader_redis_dryrun.py
+D:\guojinqmt\python\bigqmt_signal_trader_redis_dryrun.py
 ```
 
 默认配置：

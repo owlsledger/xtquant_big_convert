@@ -9,7 +9,7 @@ Do not commit the real file. It may contain account ids and Redis credentials.
 """
 
 BIGQMT_ACCOUNT_ID = "YOUR_ACCOUNT_ID"
-BIGQMT_RPC_TIMEOUT_SECONDS = 6.0
+BIGQMT_RPC_TIMEOUT_SECONDS = 3600.0
 
 BIGQMT_REDIS_CONFIG = {
     "host": "YOUR_REDIS_HOST",

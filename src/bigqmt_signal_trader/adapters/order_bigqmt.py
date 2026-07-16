@@ -21,10 +21,27 @@ PRICE_TYPE_ALIASES = {
 
 
 def _action_from_offset_flag(offset_flag):
+    """actionfromoffsetflag。
+    
+    Args:
+        offset_flag: offsetflag
+    
+    Returns:
+         — 处理结果。
+    """
     return SignalAction.BUY.value if int(offset_flag or 0) == 48 else SignalAction.SELL.value
 
 
 def _price_type_value(value, default):
+    """pricetype值。
+    
+    Args:
+        value: 值
+        default: default
+    
+    Returns:
+         — 处理结果。
+    """
     if value is None or value == "":
         return int(default)
     try:
@@ -35,6 +52,8 @@ def _price_type_value(value, default):
 
 
 class BigQmtOrderGateway:
+    """BigQmtOrder网关，提供 build_user_order_id, submit, cancel, query_orders, query_trades 等方法。
+    """
     def __init__(
         self,
         context_info,
@@ -47,6 +66,19 @@ class BigQmtOrderGateway:
         price_type=11,
         quick_trade=2,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            context_info: context信息
+            account_id: 账号ID
+            passorder_func: passorderfunc
+            cancel_func: cancelfunc
+            get_trade_detail_data_func: get成交detaildatafunc
+            account_type: 账号类型
+            combo_type: combotype
+            price_type: pricetype
+            quick_trade: quick成交
+        """
         self.context_info = context_info
         self.account_id = account_id
         self.passorder = passorder_func
@@ -58,27 +90,58 @@ class BigQmtOrderGateway:
         self.quick_trade = quick_trade
 
     def _require_passorder(self):
+        """requirepassorder。
+        
+        Returns:
+             — 处理结果。
+        """
         if self.passorder is None:
             raise RuntimeError("passorder is not available in Big QMT runtime")
         return self.passorder
 
     def _require_cancel(self):
+        """requirecancel。
+        
+        Returns:
+             — 处理结果。
+        """
         if self.cancel_func is None:
             raise RuntimeError("cancel is not available in Big QMT runtime")
         return self.cancel_func
 
     def _require_query_func(self):
+        """requirequeryfunc。
+        
+        Returns:
+             — 处理结果。
+        """
         if self.get_trade_detail_data is None:
             raise RuntimeError("get_trade_detail_data is not available in Big QMT runtime")
         return self.get_trade_detail_data
 
     @staticmethod
     def build_user_order_id(signal_id):
+        """构建user订单id。
+        
+        Args:
+            signal_id: 信号id
+        
+        Returns:
+             — 处理结果。
+        """
         text = str(signal_id or "")
         digest = hashlib.sha1(text.encode("utf-8")).hexdigest()[:10]
         return "bq:%s:%s" % (digest, text[:30])
 
     def submit(self, request):
+        """submit。
+        
+        Args:
+            request: 请求
+        
+        Returns:
+             — 处理结果。
+        """
         passorder = self._require_passorder()
         action = str(request.action).upper()
         if action == SignalAction.BUY.value:
@@ -111,11 +174,28 @@ class BigQmtOrderGateway:
         )
 
     def cancel(self, order_ref):
+        """cancel。
+        
+        Args:
+            order_ref: 订单ref
+        
+        Returns:
+             — 处理结果。
+        """
         cancel_func = self._require_cancel()
         ok = cancel_func(order_ref.order_sys_id, self.account_id, self.account_type, self.context_info)
         return CancelResult(success=bool(ok), message="" if ok else "cancel returned false")
 
     def query_orders(self, account_id, strategy_name):
+        """查询orders。
+        
+        Args:
+            account_id: 账号ID
+            strategy_name: 策略name
+        
+        Returns:
+             — 处理结果。
+        """
         query = self._require_query_func()
         # QMT's get_trade_detail_data can raise on ORDER queries in some states
         # (e.g. context not bound). Degrade to empty like query_trades does.
@@ -145,6 +225,15 @@ class BigQmtOrderGateway:
         return result
 
     def query_trades(self, account_id, strategy_name):
+        """查询trades。
+        
+        Args:
+            account_id: 账号ID
+            strategy_name: 策略name
+        
+        Returns:
+             — 处理结果。
+        """
         query = self._require_query_func()
         rows = []
         for detail_type in ("DEAL", "TRADE"):

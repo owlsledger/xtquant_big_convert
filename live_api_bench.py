@@ -10,7 +10,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
-sys.path.insert(0, r"D:\guoseniquant\python")
+sys.path.insert(0, r"D:\guojinqmt\python")
 
 from bigqmt_signal_trader.xtquant_compat import configure, xtdata, xt_trader  # noqa: E402
 
@@ -41,6 +41,11 @@ GROUPS = {
 
 
 def main():
+    """main。
+    
+    Returns:
+         — 处理结果。
+    """
     configure()
     total = 0
     failed = 0

@@ -44,6 +44,16 @@ def build_transport(
 
 
 def _build_redis(config, account_id, print_prefix):
+    """buildredis。
+    
+    Args:
+        config: 配置
+        account_id: 账号ID
+        print_prefix: print前缀
+    
+    Returns:
+         — 处理结果。
+    """
     redis_client = config.get("redis_client")
     if redis_client is None:
         from ..adapters.redis_common import build_redis_client
@@ -80,6 +90,16 @@ def _build_redis(config, account_id, print_prefix):
 
 
 def _build_zmq(config, account_id, print_prefix):
+    """buildzmq。
+    
+    Args:
+        config: 配置
+        account_id: 账号ID
+        print_prefix: print前缀
+    
+    Returns:
+         — 处理结果。
+    """
     from .zmq_transport import ZmqTransport
 
     zmq_config = dict(config.get("zmq") or {})
@@ -107,6 +127,16 @@ def _build_zmq(config, account_id, print_prefix):
 
 
 def _build_mysql(config, account_id, print_prefix):
+    """buildmysql。
+    
+    Args:
+        config: 配置
+        account_id: 账号ID
+        print_prefix: print前缀
+    
+    Returns:
+         — 处理结果。
+    """
     from .mysql_transport import MysqlTransport
 
     return MysqlTransport.from_config(
@@ -117,6 +147,16 @@ def _build_mysql(config, account_id, print_prefix):
 
 
 def _build_shm(config, account_id, print_prefix):
+    """buildshm。
+    
+    Args:
+        config: 配置
+        account_id: 账号ID
+        print_prefix: print前缀
+    
+    Returns:
+         — 处理结果。
+    """
     from .shm_transport import SharedMemoryTransport
 
     return SharedMemoryTransport(

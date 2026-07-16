@@ -53,6 +53,11 @@ ACCOUNT = os.environ.get("BIGQMT_ACCOUNT_ID", "")
 
 
 def _free_port():
+    """freeport。
+    
+    Returns:
+         — 处理结果。
+    """
     s = socket.socket()
     s.bind(("127.0.0.1", 0))
     port = s.getsockname()[1]
@@ -61,6 +66,12 @@ def _free_port():
 
 
 def _stats(name, lats):
+    """stats。
+    
+    Args:
+        name: name
+        lats: lats
+    """
     lats = sorted(lats)
     n = len(lats)
     print(
@@ -79,6 +90,11 @@ def _stats(name, lats):
 
 
 def bench_redis(n):
+    """benchredis。
+    
+    Args:
+        n: n
+    """
     r = redis.Redis(**REDIS)
     # warmup + connectivity
     try:
@@ -95,10 +111,26 @@ def bench_redis(n):
 
 
 def bench_zmq(n):
+    """benchzmq。
+    
+    Args:
+        n: n
+    
+    Returns:
+         — 处理结果。
+    """
     port = _free_port()
     addr = "tcp://127.0.0.1:%d" % port
 
     def on_req(req):
+        """onreq。
+        
+        Args:
+            req: req
+        
+        Returns:
+             — 处理结果。
+        """
         return {
             "schema_version": 1,
             "request_id": req["request_id"],
@@ -137,6 +169,8 @@ def bench_zmq(n):
 
 
 def main():
+    """main。
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--count", type=int, default=100, help="requests per transport")
     ap.add_argument("--skip-redis", action="store_true", help="skip the redis leg")

@@ -62,6 +62,14 @@ _SCHEMA = [
 
 
 def _loads(raw):
+    """loads。
+    
+    Args:
+        raw: raw
+    
+    Returns:
+         — 处理结果。
+    """
     if isinstance(raw, dict):
         return dict(raw)
     text = decode_text(raw)
@@ -94,6 +102,21 @@ class MysqlTransport(RpcTransport):
         pool_config=None,
         use_pool=True,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            driver: driver
+            connect_kwargs: connectkwargs
+            requests_table: requeststable
+            responses_table: responsestable
+            account_id: 账号ID
+            print_prefix: print前缀
+            poll_interval_seconds: poll间隔seconds
+            row_ttl_seconds: rowttlseconds
+            background_threads: backgroundthreads
+            pool_config: pool配置
+            use_pool: usepool
+        """
         super(MysqlTransport, self).__init__(account_id=account_id, print_prefix=print_prefix)
         self.driver = driver
         self.connect_kwargs = dict(connect_kwargs or {})
@@ -112,6 +135,14 @@ class MysqlTransport(RpcTransport):
         self._placeholder = None
 
     def _resolve_placeholder(self, mod):
+        """resolve占位符。
+        
+        Args:
+            mod: mod
+        
+        Returns:
+             — 处理结果。
+        """
         style = getattr(mod, "paramstyle", "format")
         if style == "qmark":
             return "?"
@@ -119,6 +150,11 @@ class MysqlTransport(RpcTransport):
 
     def _ph(self):
         # Return the placeholder char (resolving lazily).
+        """ph。
+        
+        Returns:
+             — 处理结果。
+        """
         if self._placeholder is None:
             try:
                 mod = __import__(self.driver)
@@ -138,6 +174,16 @@ class MysqlTransport(RpcTransport):
 
     @classmethod
     def from_config(cls, config, account_id="", print_prefix="[bigqmt_rpc]"):
+        """从配置转换为当前类型。
+        
+        Args:
+            config: 配置
+            account_id: 账号ID
+            print_prefix: print前缀
+        
+        Returns:
+             — 处理结果。
+        """
         config = dict(config or {})
         driver = config.get("driver", "pymysql")
         connect_kwargs = dict(config.get("connect_kwargs") or {})
@@ -161,6 +207,11 @@ class MysqlTransport(RpcTransport):
 
     # -- driver access / connection pool ----------------------------------
     def _import_driver(self):
+        """importdriver。
+        
+        Returns:
+             — 处理结果。
+        """
         try:
             return __import__(self.driver)
         except ImportError as exc:  # pragma: no cover - depends on env
@@ -224,6 +275,11 @@ class MysqlTransport(RpcTransport):
         return cfg
 
     def _connect(self):
+        """connect。
+        
+        Returns:
+             — 处理结果。
+        """
         if not self.use_pool:
             return self._import_driver().connect(**self.connect_kwargs)
         if self._pool is None:
@@ -233,6 +289,8 @@ class MysqlTransport(RpcTransport):
         return self._pool.connection()
 
     def _ensure_schema(self):
+        """ensureschema。
+        """
         if self._schema_ready:
             return
         ctx = {"requests": self.requests_table, "responses": self.responses_table}
@@ -255,10 +313,24 @@ class MysqlTransport(RpcTransport):
                 pass
 
     def _now(self):
+        """now。
+        
+        Returns:
+             — 处理结果。
+        """
         return time.time()
 
     # -- client side ------------------------------------------------------
     def send_request(self, request, timeout_seconds):
+        """发送请求。
+        
+        Args:
+            request: 请求
+            timeout_seconds: 超时(秒)seconds
+        
+        Returns:
+             — 处理结果。
+        """
         self._ensure_schema()
         request = dict(request)
         request.setdefault("request_id", uuid.uuid4().hex)
@@ -313,6 +385,12 @@ class MysqlTransport(RpcTransport):
 
     # -- server side ------------------------------------------------------
     def start_receiving(self, on_request, background_threads=None):
+        """启动receiving。
+        
+        Args:
+            on_request: on请求
+            background_threads: backgroundthreads
+        """
         super(MysqlTransport, self).start_receiving(on_request)
         self._ensure_schema()
         if background_threads is None:
@@ -329,6 +407,8 @@ class MysqlTransport(RpcTransport):
             self.print_prefix, self.requests_table))
 
     def _poll_loop(self):
+        """pollloop。
+        """
         while self._running:
             try:
                 self._claim_and_handle_batch()
@@ -341,6 +421,11 @@ class MysqlTransport(RpcTransport):
             time.sleep(self.poll_interval_seconds)
 
     def _claim_and_handle_batch(self, max_items=20):
+        """claimandhandlebatch。
+        
+        Args:
+            max_items: maxitems
+        """
         conn = self._connect()
         claimed = []
         try:
@@ -387,6 +472,11 @@ class MysqlTransport(RpcTransport):
             self._delete_request(request_id)
 
     def _delete_request(self, request_id):
+        """delete请求。
+        
+        Args:
+            request_id: 请求id
+        """
         conn = self._connect()
         try:
             cur = conn.cursor()
@@ -404,6 +494,12 @@ class MysqlTransport(RpcTransport):
                 pass
 
     def send_response(self, request, response):
+        """发送响应。
+        
+        Args:
+            request: 请求
+            response: 响应
+        """
         request_id = str(
             response.get("request_id") or request.get("request_id") or ""
         )
@@ -442,6 +538,14 @@ class MysqlTransport(RpcTransport):
 
     # -- non-background drain (strategy adjust thread) --------------------
     def drain_request_queue(self, max_items=20):
+        """drain请求队列。
+        
+        Args:
+            max_items: maxitems
+        
+        Returns:
+             — 处理结果。
+        """
         if not self._running:
             return 0
         before = 0  # _claim_and_handle_batch handles its own count
@@ -449,6 +553,8 @@ class MysqlTransport(RpcTransport):
         return 0
 
     def stop(self):
+        """stop。
+        """
         super(MysqlTransport, self).stop()
         if self._thread is not None and self._thread.is_alive():
             self._thread.join(1.0)

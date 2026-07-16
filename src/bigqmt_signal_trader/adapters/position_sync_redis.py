@@ -5,6 +5,8 @@ import json
 
 
 class RedisPositionSyncSink:
+    """redis持仓syncsink，提供 publish 等方法。
+    """
     def __init__(
         self,
         redis_client,
@@ -13,6 +15,15 @@ class RedisPositionSyncSink:
         ttl_seconds=120,
         publish_events=True,
     ):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            redis_client: redisclient
+            key_template: 键模板
+            event_stream_template: event流模板
+            ttl_seconds: ttlseconds
+            publish_events: publishevents
+        """
         self.redis = redis_client
         self.key_template = key_template
         self.event_stream_template = event_stream_template
@@ -21,11 +32,27 @@ class RedisPositionSyncSink:
 
     @staticmethod
     def _time_text(value):
+        """timetext。
+        
+        Args:
+            value: 值
+        
+        Returns:
+             — 处理结果。
+        """
         if isinstance(value, _dt.datetime):
             return value.strftime("%Y-%m-%d %H:%M:%S")
         return str(value)
 
     def _snapshot_to_dict(self, snapshot):
+        """snapshottodict。
+        
+        Args:
+            snapshot: snapshot
+        
+        Returns:
+             — 处理结果。
+        """
         return {
             "account_id": snapshot.account_id,
             "reason": snapshot.reason,
@@ -47,6 +74,11 @@ class RedisPositionSyncSink:
         }
 
     def publish(self, snapshot):
+        """publish。
+        
+        Args:
+            snapshot: snapshot
+        """
         payload = json.dumps(self._snapshot_to_dict(snapshot), ensure_ascii=False)
         key = self.key_template.format(account_id=snapshot.account_id)
         if self.ttl_seconds > 0:

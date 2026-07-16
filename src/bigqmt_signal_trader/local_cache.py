@@ -16,6 +16,14 @@ _TIME_COLS = ("stime", "time", "index", "date", "datetime", "timetag")
 
 
 def _time_col(df):
+    """timecol。
+    
+    Args:
+        df: df
+    
+    Returns:
+         — 处理结果。
+    """
     cols = list(getattr(df, "columns", []))
     for name in _TIME_COLS:
         if name in cols:
@@ -24,6 +32,14 @@ def _time_col(df):
 
 
 def _pad_end(value):
+    """padend。
+    
+    Args:
+        value: 值
+    
+    Returns:
+         — 处理结果。
+    """
     text = str(value)
     return text + "9" * (14 - len(text)) if 0 < len(text) < 14 else text
 
@@ -42,6 +58,11 @@ def _drop_placeholder_rows(df):
 
 
 def _pyarrow_available():
+    """pyarrowavailable。
+    
+    Returns:
+         — 处理结果。
+    """
     try:
         import pyarrow  # noqa: F401
 
@@ -51,6 +72,14 @@ def _pyarrow_available():
 
 
 def _resolve_format(fmt):
+    """resolveformat。
+    
+    Args:
+        fmt: fmt
+    
+    Returns:
+         — 处理结果。
+    """
     fmt = str(fmt or "auto").lower()
     if fmt in ("parquet", "pq"):
         return "parquet"
@@ -61,14 +90,37 @@ def _resolve_format(fmt):
 
 
 class LocalMarketCache:
+    """LocalMarket缓存，提供 path, write, read, covered, stats 等方法。
+    """
     def __init__(self, cache_dir=None, fmt="auto"):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            cache_dir: cachedir
+            fmt: fmt
+        """
         self.cache_dir = str(cache_dir or os.path.join(os.path.expanduser("~"), ".bigqmt_cache"))
         self.fmt = _resolve_format(fmt)
 
     def _ext(self):
+        """ext。
+        
+        Returns:
+             — 处理结果。
+        """
         return ".parquet" if self.fmt == "parquet" else ".pkl"
 
     def path(self, code, period, dividend_type="none"):
+        """path。
+        
+        Args:
+            code: code
+            period: period
+            dividend_type: 除权除息type
+        
+        Returns:
+             — 处理结果。
+        """
         safe_code = str(code or "").replace("/", "_").replace("\\", "_")
         div = str(dividend_type or "none")
         return os.path.join(self.cache_dir, str(period or "1d"), div, safe_code + self._ext())
@@ -88,6 +140,14 @@ class LocalMarketCache:
 
     @staticmethod
     def _read_file(path):
+        """readfile。
+        
+        Args:
+            path: path
+        
+        Returns:
+             — 处理结果。
+        """
         import pandas as pd
 
         # Read by actual file extension (an existing cache may be either format).
@@ -98,6 +158,12 @@ class LocalMarketCache:
     def _write_file(self, df, path):
         # Write in the configured format regardless of the path (the temp file ends
         # with ".tmp", not the format extension).
+        """writefile。
+        
+        Args:
+            df: df
+            path: path
+        """
         if self.fmt == "parquet":
             df.to_parquet(path, index=False)
         else:

@@ -39,6 +39,12 @@ class RpcTransport(object):
     name = "abstract"
 
     def __init__(self, account_id="", print_prefix="[bigqmt_rpc]"):
+        """初始化实例，设置内部状态和依赖项。
+        
+        Args:
+            account_id: 账号ID
+            print_prefix: print前缀
+        """
         self.account_id = str(account_id or "")
         self.print_prefix = print_prefix
         self._on_request = None
@@ -118,4 +124,9 @@ class RpcTransport(object):
         return response
 
     def __repr__(self):
+        """返回实例的官方字符串表示形式，包含关键状态信息。
+        
+        Returns:
+             — 处理结果。
+        """
         return "<%s account_id=%r>" % (self.__class__.__name__, self.account_id)

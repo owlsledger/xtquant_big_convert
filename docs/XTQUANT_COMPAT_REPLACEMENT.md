@@ -62,7 +62,7 @@ from xtquant import xtdata, xtconstant
 ```python
 # D:\gjzqqmt\xtquant_big_convert\src\bigqmt_signal_trader_client_config.py
 BIGQMT_ACCOUNT_ID = "YOUR_ACCOUNT_ID"
-BIGQMT_RPC_TIMEOUT_SECONDS = 6.0
+BIGQMT_RPC_TIMEOUT_SECONDS = 3600.0
 
 BIGQMT_REDIS_CONFIG = {
     "host": "YOUR_REDIS_HOST",

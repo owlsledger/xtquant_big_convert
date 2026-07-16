@@ -14,16 +14,40 @@ CACHE_KEY_TEMPLATE = "bigqmt:full_tick:cache:{account_id}:{request_id}"
 
 
 def _decode_text(value):
+    """decodetext。
+    
+    Args:
+        value: 值
+    
+    Returns:
+         — 处理结果。
+    """
     if isinstance(value, bytes):
         return value.decode("utf-8")
     return str(value)
 
 
 def _loads_json(value):
+    """loadsjson。
+    
+    Args:
+        value: 值
+    
+    Returns:
+         — 处理结果。
+    """
     return json.loads(_decode_text(value))
 
 
 def normalize_full_tick_codes(codes):
+    """标准化/归一化fulltickcodes。
+    
+    Args:
+        codes: codes
+    
+    Returns:
+         — 处理结果。
+    """
     normalized = []
     seen = set()
     for code in codes or []:
@@ -41,25 +65,67 @@ def normalize_full_tick_codes(codes):
 
 
 def full_tick_request_id(codes):
+    """fulltick请求id。
+    
+    Args:
+        codes: codes
+    
+    Returns:
+         — 处理结果。
+    """
     normalized = normalize_full_tick_codes(codes)
     digest = hashlib.sha1("|".join(normalized).encode("utf-8")).hexdigest()
     return digest[:20]
 
 
 def full_tick_demand_key(account_id):
+    """fulltickdemand键。
+    
+    Args:
+        account_id: 账号ID
+    
+    Returns:
+         — 处理结果。
+    """
     return DEMAND_KEY_TEMPLATE.format(account_id=str(account_id or ""))
 
 
 def full_tick_cache_key(account_id, codes=None, request_id=None):
+    """fulltickcache键。
+    
+    Args:
+        account_id: 账号ID
+        codes: codes
+        request_id: 请求id
+    
+    Returns:
+         — 处理结果。
+    """
     rid = str(request_id or full_tick_request_id(codes or []))
     return CACHE_KEY_TEMPLATE.format(account_id=str(account_id or ""), request_id=rid)
 
 
 def _dump_snapshot(payload):
+    """dumpsnapshot。
+    
+    Args:
+        payload: 载荷
+    
+    Returns:
+         — 处理结果。
+    """
     return pickle.dumps(payload, protocol=4)
 
 
 def _load_snapshot(raw):
+    """loadsnapshot。
+    
+    Args:
+        raw: raw
+    
+    Returns:
+         — 处理结果。
+    """
     if not raw:
         return None
     try:
@@ -72,6 +138,18 @@ def _load_snapshot(raw):
 
 
 def request_full_tick_cache(redis_client, account_id, codes, demand_ttl_seconds=10, cache_ttl_seconds=10):
+    """请求fulltickcache。
+    
+    Args:
+        redis_client: redisclient
+        account_id: 账号ID
+        codes: codes
+        demand_ttl_seconds: demandttlseconds
+        cache_ttl_seconds: cachettlseconds
+    
+    Returns:
+         — 处理结果。
+    """
     normalized = normalize_full_tick_codes(codes)
     if not normalized:
         raise ValueError("full tick codes are required")
@@ -94,6 +172,18 @@ def request_full_tick_cache(redis_client, account_id, codes, demand_ttl_seconds=
 
 
 def write_full_tick_cache(redis_client, account_id, codes, data, cache_ttl_seconds=10):
+    """写入fulltickcache。
+    
+    Args:
+        redis_client: redisclient
+        account_id: 账号ID
+        codes: codes
+        data: data
+        cache_ttl_seconds: cachettlseconds
+    
+    Returns:
+         — 处理结果。
+    """
     normalized = normalize_full_tick_codes(codes)
     request_id = full_tick_request_id(normalized)
     now = time.time()
@@ -111,6 +201,17 @@ def write_full_tick_cache(redis_client, account_id, codes, data, cache_ttl_secon
 
 
 def read_full_tick_cache(redis_client, account_id, codes, max_age_seconds=10):
+    """读取fulltickcache。
+    
+    Args:
+        redis_client: redisclient
+        account_id: 账号ID
+        codes: codes
+        max_age_seconds: maxageseconds
+    
+    Returns:
+         — 处理结果。
+    """
     normalized = normalize_full_tick_codes(codes)
     key = full_tick_cache_key(account_id, codes=normalized)
     snapshot = _load_snapshot(redis_client.get(key))
@@ -128,6 +229,19 @@ def read_full_tick_cache(redis_client, account_id, codes, max_age_seconds=10):
 
 
 def wait_full_tick_cache(redis_client, account_id, codes, max_age_seconds=10, wait_seconds=3.5, poll_interval_seconds=0.2):
+    """waitfulltickcache。
+    
+    Args:
+        redis_client: redisclient
+        account_id: 账号ID
+        codes: codes
+        max_age_seconds: maxageseconds
+        wait_seconds: waitseconds
+        poll_interval_seconds: poll间隔seconds
+    
+    Returns:
+         — 处理结果。
+    """
     deadline = time.time() + max(0.0, float(wait_seconds))
     while True:
         data = read_full_tick_cache(redis_client, account_id, codes, max_age_seconds=max_age_seconds)
@@ -139,6 +253,17 @@ def wait_full_tick_cache(redis_client, account_id, codes, max_age_seconds=10, wa
 
 
 def iter_active_full_tick_demands(redis_client, account_id, demand_ttl_seconds=10, max_requests=8):
+    """iteractivefulltickdemands。
+    
+    Args:
+        redis_client: redisclient
+        account_id: 账号ID
+        demand_ttl_seconds: demandttlseconds
+        max_requests: maxrequests
+    
+    Returns:
+         — 处理结果。
+    """
     key = full_tick_demand_key(account_id)
     raw_mapping = redis_client.hgetall(key) or {}
     now = time.time()
@@ -175,6 +300,14 @@ def iter_active_full_tick_demands(redis_client, account_id, demand_ttl_seconds=1
 
 
 def _demand_is_market(codes):
+    """demandis市场。
+    
+    Args:
+        codes: codes
+    
+    Returns:
+         — 处理结果。
+    """
     return any(str(code).strip().upper() in MARKET_CODES for code in codes or [])
 
 
