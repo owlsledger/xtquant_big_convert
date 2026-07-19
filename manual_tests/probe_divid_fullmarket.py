@@ -6,7 +6,7 @@
 2) 历史深度：对上市最早的若干只股票，打印其最早一条除权日，确认数据回溯到早期。
 
 运行：
-    set BIGQMT_ACCOUNT_ID=77001381
+    set BIGQMT_ACCOUNT_ID=8890831573
     python manual_tests/probe_divid_fullmarket.py
 """
 import os
@@ -16,7 +16,7 @@ import datetime
 
 SRC = os.path.join(os.path.dirname(__file__), "..", "src")
 sys.path.insert(0, os.path.abspath(SRC))
-os.environ.setdefault("BIGQMT_ACCOUNT_ID", "77001381")
+os.environ.setdefault("BIGQMT_ACCOUNT_ID", "8890831573")
 
 from xtquant import xtdata
 

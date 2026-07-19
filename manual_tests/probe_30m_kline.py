@@ -5,7 +5,7 @@ import sys, os, json
 SRC = os.path.join(os.path.dirname(__file__), "..", "src")
 sys.path.insert(0, os.path.abspath(SRC))
 
-os.environ.setdefault("BIGQMT_ACCOUNT_ID", "77001381")
+os.environ.setdefault("BIGQMT_ACCOUNT_ID", "8890831573")
 
 from xtquant import xtdata
 

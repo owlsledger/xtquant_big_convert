@@ -1,4 +1,3 @@
-# coding: utf-8
 """Local private config example for the QMT python directory.
 
 Copy this file to the QMT python directory as:
@@ -45,9 +44,9 @@ BIGQMT_REDIS_CONFIG = {
     # Async download jobs: clients submit download_history_data(2) as a job; the
     # strategy thread downloads download_job_chunk_size symbols per tick (capped by
     # download_job_max_wall_seconds), so a long download never blocks the RPC pump.
-    # chunk_size is the smallest per-tick block — keep it modest if downloads are slow.
+    # chunk_size is the smallest per-tick block �� keep it modest if downloads are slow.
     # Disabled: the full terminal's xtdata SDK can't reach a data service to
-    # download. Supplement history via the terminal's 数据管理/补充数据 UI, then read
+    # download. Supplement history via the terminal's ���ݹ���/�������� UI, then read
     # it over RPC (get_market_data_ex/get_local_data). Enable only where a
     # MiniQMT/xtdata data service is connectable.
     "download_jobs_enabled": False,

@@ -2,7 +2,7 @@
 """通过 Redis RPC 连运行中的大 QMT，探测 get_divid_factors 是否返回复权因子。
 
 运行（在 qmt/xtquant_big_convert 下，确保 PYTHONPATH 含 src）：
-    set BIGQMT_ACCOUNT_ID=77001381
+    set BIGQMT_ACCOUNT_ID=8890831573
     python manual_tests/probe_divid_rpc.py
 """
 import os
@@ -14,7 +14,7 @@ import datetime
 SRC = os.path.join(os.path.dirname(__file__), "..", "src")
 sys.path.insert(0, os.path.abspath(SRC))
 
-os.environ.setdefault("BIGQMT_ACCOUNT_ID", "77001381")
+os.environ.setdefault("BIGQMT_ACCOUNT_ID", "8890831573")
 
 from xtquant import xtdata
 

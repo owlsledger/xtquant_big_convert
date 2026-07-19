@@ -12,7 +12,7 @@ gitignored), or from xt_trader.client.account_id after configure(). No
 credentials are hard-coded here. Run from a dir where that config module
 resolves, e.g.:
 
-    PYTHONPATH="src" BIGQMT_ACCOUNT_ID=77001381 python test_all_apis.py
+    PYTHONPATH="src" BIGQMT_ACCOUNT_ID=8890831573 python test_all_apis.py
 
 Trader-side probes (query_stock_*) require a valid account id; if none is
 available they are reported as SKIP rather than FAIL so the smoke test can
