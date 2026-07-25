@@ -14,6 +14,7 @@ from bigqmt_signal_trader.redis_rpc import (
     RedisPubSubRpcService,
     decode_rpc_request_payload,
     encode_rpc_request_payload,
+    to_jsonable,
 )
 
 
@@ -62,6 +63,21 @@ class FakePositionProvider:
 
     def get_asset(self, account_id):
         return AssetSnapshot(account_id=account_id, cash=100.0, total_asset=1000.0)
+
+
+class JsonableTest(unittest.TestCase):
+    def test_dataframe_index_column_name_collision_stays_structured(self):
+        import pandas as pd
+
+        df = pd.DataFrame({"stime": ["20260723"], "close": [10.0]})
+        df.index = pd.Index(["20260723"], name="stime")
+
+        payload = to_jsonable(df)
+
+        self.assertIsInstance(payload, dict)
+        self.assertEqual(payload["__bigqmt_type__"], "DataFrame")
+        self.assertEqual(payload["columns"], ["stime", "close"])
+        self.assertEqual(payload["records"][0]["stime"], "20260723")
 
 
 def _service(allow_order_methods=False, process_in_listener=False):

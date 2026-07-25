@@ -107,9 +107,10 @@ class LocalMarketCacheTest(unittest.TestCase):
 
 
 class FakeClient:
-    def __init__(self, cache_dir, fallback_rpc=False):
+    def __init__(self, cache_dir, fallback_rpc=False, string_market_data=False):
         self.account_id = "acct"
         self.calls = []
+        self.string_market_data = string_market_data
         self.local_cache_config = {"enabled": True, "dir": cache_dir, "fallback_rpc": fallback_rpc}
 
     def _redis(self):
@@ -121,7 +122,11 @@ class FakeClient:
             import pandas as pd
 
             codes = (params or {}).get("stock_list") or []
-            return {c: pd.DataFrame({"stime": ["20260626", "20260629"], "close": [8.76, 8.73]}) for c in codes}
+            data = {}
+            for c in codes:
+                df = pd.DataFrame({"stime": ["20260626", "20260629"], "close": [8.76, 8.73]})
+                data[c] = str(df) if self.string_market_data else df
+            return data
         raise AssertionError("unexpected rpc: %s" % method)
 
 
@@ -132,10 +137,16 @@ class LocalCacheClientTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.dir, ignore_errors=True)
 
-    def _xt(self, fallback_rpc=False):
+    def _xt(self, fallback_rpc=False, string_market_data=False):
         from bigqmt_signal_trader.xtquant_compat import BigQmtXtData
 
-        return BigQmtXtData(FakeClient(self.dir, fallback_rpc=fallback_rpc))
+        return BigQmtXtData(
+            FakeClient(
+                self.dir,
+                fallback_rpc=fallback_rpc,
+                string_market_data=string_market_data,
+            )
+        )
 
     def test_download_caches_then_get_local_reads_without_rpc(self):
         xt = self._xt()
@@ -165,6 +176,17 @@ class LocalCacheClientTest(unittest.TestCase):
         data = xt.get_local_data(stock_list=["600000.SH"], period="1d")
         self.assertIn("600000.SH", data)
         self.assertEqual(len(xt.client.calls), n)  # served from cache, no extra RPC
+
+    def test_download_caches_legacy_string_market_data(self):
+        xt = self._xt(string_market_data=True)
+
+        res = xt.download_history_data2(["600000.SH"], "1d")
+        data = xt.get_local_data(stock_list=["600000.SH"], period="1d")
+
+        self.assertEqual(res, {"finished": 1, "total": 1})
+        self.assertIn("600000.SH", data)
+        self.assertEqual(list(data["600000.SH"]["stime"]), [20260626, 20260629])
+        self.assertEqual(list(data["600000.SH"]["close"]), [8.76, 8.73])
 
     def test_get_local_miss_returns_empty_and_no_rpc(self):
         xt = self._xt()

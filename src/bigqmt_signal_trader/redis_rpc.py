@@ -289,7 +289,10 @@ def to_jsonable(value):
             return str(value)
     if hasattr(value, "to_dict") and hasattr(value, "columns") and hasattr(value, "index"):
         try:
-            frame = value.reset_index()
+            try:
+                frame = value.reset_index()
+            except ValueError:
+                frame = value.reset_index(drop=True)
             return {
                 "__bigqmt_type__": "DataFrame",
                 "columns": [str(col) for col in frame.columns],

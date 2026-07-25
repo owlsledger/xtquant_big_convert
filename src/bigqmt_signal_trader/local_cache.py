@@ -229,10 +229,11 @@ class LocalMarketCache:
             return None
         tcol = _time_col(df)
         if tcol and tcol in df.columns:
-            series = df[tcol].astype(str)
             if start_time:
+                series = df[tcol].astype(str)
                 df = df[series >= str(start_time)]
             if end_time:
+                series = df[tcol].astype(str)
                 df = df[series <= _pad_end(end_time)]
             df = df.sort_values(tcol).reset_index(drop=True)
         try:

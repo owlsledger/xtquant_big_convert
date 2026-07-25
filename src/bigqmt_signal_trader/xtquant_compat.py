@@ -11,6 +11,7 @@ import time
 import uuid
 import threading
 import importlib
+from io import StringIO
 from typing import Any, Dict, Iterable, List, Optional
 
 from .full_tick_cache import request_full_tick_cache, wait_full_tick_cache
@@ -324,6 +325,72 @@ def _as_list(value):
     if isinstance(value, list):
         return value
     return [value]
+
+
+def _parse_dataframe_repr(value):
+    """Best-effort parser for legacy RPC responses that returned str(DataFrame)."""
+    text = str(value or "").strip()
+    if not text or text in {"None", "{}"} or text.startswith("Empty DataFrame"):
+        return None
+
+    lines = []
+    for raw_line in text.splitlines():
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("[") and " rows x " in stripped and stripped.endswith("]"):
+            continue
+        if stripped.startswith(("Columns:", "Index:")):
+            continue
+        if "..." in stripped.split():
+            continue
+        lines.append(line)
+    if len(lines) < 2:
+        return None
+
+    try:
+        import pandas as pd
+
+        try:
+            df = pd.read_csv(StringIO("\n".join(lines)), sep=r"\s+", engine="python")
+        except Exception:
+            df = pd.read_fwf(StringIO("\n".join(lines)))
+        if df.empty:
+            return None
+        unnamed = [c for c in df.columns if str(c).startswith("Unnamed:")]
+        if unnamed:
+            df = df.drop(columns=unnamed)
+        df = df.loc[:, [c for c in df.columns if str(c) != "..."]]
+        for col in df.columns:
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except (TypeError, ValueError):
+                pass
+        return df
+    except Exception:
+        return None
+
+
+def _coerce_market_data_frame(value):
+    """Normalize market-data payloads before writing the local cache."""
+    if value is None:
+        return None
+    if hasattr(value, "shape") and hasattr(value, "columns"):
+        return value
+    if isinstance(value, str):
+        return _parse_dataframe_repr(value)
+    if isinstance(value, dict):
+        marker = value.get("__bigqmt_type__")
+        if marker == "DataFrame":
+            return _restore_jsonable(value)
+        try:
+            import pandas as pd
+
+            return pd.DataFrame(value)
+        except Exception:
+            return None
+    return None
 
 
 def _restore_jsonable(value):
@@ -878,6 +945,7 @@ class BigQmtXtData:
         if cache is not None and isinstance(data, dict):
             for code, df in data.items():
                 try:
+                    df = _coerce_market_data_frame(df)
                     cache.write(code, period, df, dividend_type=dividend_type)
                 except Exception:
                     pass
