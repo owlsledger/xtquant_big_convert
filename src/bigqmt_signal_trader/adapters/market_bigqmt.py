@@ -28,6 +28,7 @@ This module does not make trading decisions.
 
 import importlib
 import importlib.util
+from io import StringIO
 
 from ..code_utils import normalize_stock_code
 
@@ -52,6 +53,75 @@ def normalize_market_or_stock_code(code):
 
 _NATIVE_XTDATA = None  # cached native xtdata SDK module (None = not yet tried)
 _NATIVE_XTDATA_UNAVAILABLE = object()  # sentinel: looked, not importable
+
+
+def _parse_dataframe_repr(value):
+    """Best-effort parser for ContextInfo paths returning str(DataFrame)."""
+    text = str(value or "").strip()
+    if not text or text in {"None", "{}"} or text.startswith("Empty DataFrame"):
+        return None
+
+    lines = []
+    for raw_line in text.splitlines():
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("[") and " rows x " in stripped and stripped.endswith("]"):
+            continue
+        if stripped.startswith(("Columns:", "Index:")):
+            continue
+        if "..." in stripped.split():
+            continue
+        lines.append(line)
+    if len(lines) < 2:
+        return None
+
+    try:
+        import pandas as pd
+
+        try:
+            df = pd.read_csv(StringIO("\n".join(lines)), sep=r"\s+", engine="python")
+        except Exception:
+            df = pd.read_fwf(StringIO("\n".join(lines)))
+        if df.empty:
+            return None
+        unnamed = [c for c in df.columns if str(c).startswith("Unnamed:")]
+        if unnamed:
+            df = df.drop(columns=unnamed)
+        df = df.loc[:, [c for c in df.columns if str(c) != "..."]]
+        rename = {}
+        for col in df.columns:
+            text = str(col)
+            if text.endswith(".1") and text[:-2] not in df.columns:
+                rename[col] = text[:-2]
+        if rename:
+            df = df.rename(columns=rename)
+        for col in df.columns:
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except (TypeError, ValueError):
+                pass
+        return df
+    except Exception:
+        return None
+
+
+def _normalize_market_data_payload(value):
+    """Normalize market-data payloads before RPC serialization."""
+    if isinstance(value, dict):
+        normalized = {}
+        for code, item in value.items():
+            if isinstance(item, str):
+                parsed = _parse_dataframe_repr(item)
+                normalized[code] = parsed if parsed is not None else item
+            else:
+                normalized[code] = item
+        return normalized
+    if isinstance(value, str):
+        parsed = _parse_dataframe_repr(value)
+        return parsed if parsed is not None else value
+    return value
 
 
 def _load_native_xtdata():
@@ -210,7 +280,7 @@ class BigQmtMarketDataProvider:
             if method is None:
                 continue
             try:
-                return method(*args, **kwargs)
+                return _normalize_market_data_payload(method(*args, **kwargs))
             except TypeError as exc:
                 last_error = exc
                 continue

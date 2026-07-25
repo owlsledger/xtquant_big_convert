@@ -73,6 +73,15 @@ class FakeMarketDataFallbackContext(FakeContext):
         }
 
 
+class FakeStringMarketDataContext(FakeContext):
+    def get_market_data_ex(self, **kwargs):
+        return {
+            "600000.SH": """          amount  close  high   low  open     stime  volume
+stime
+20260723  2000.0   10.5  10.8  10.1  10.2  20260723  1000.0"""
+        }
+
+
 class BigQmtAdaptersTest(unittest.TestCase):
     def test_market_provider_normalizes_codes_before_context_call(self):
         context = FakeContext()
@@ -115,6 +124,17 @@ class BigQmtAdaptersTest(unittest.TestCase):
         self.assertEqual(data["fields"], ["close"])
         self.assertEqual(data["stock_code"], ["600000.SH"])
         self.assertEqual(data["period"], "1m")
+
+    def test_market_provider_normalizes_dataframe_string_payload(self):
+        context = FakeStringMarketDataContext()
+        provider = BigQmtMarketDataProvider(context)
+
+        data = provider.get_market_data_ex(stock_list=["600000.SH"], period="1d")
+
+        df = data["600000.SH"]
+        self.assertEqual(df.shape[0], 1)
+        self.assertEqual(list(df["stime"]), [20260723])
+        self.assertEqual(list(df["close"]), [10.5])
 
     def test_position_provider_maps_qmt_position_objects(self):
         calls = []

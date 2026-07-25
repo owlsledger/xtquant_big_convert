@@ -362,6 +362,13 @@ def _parse_dataframe_repr(value):
         if unnamed:
             df = df.drop(columns=unnamed)
         df = df.loc[:, [c for c in df.columns if str(c) != "..."]]
+        rename = {}
+        for col in df.columns:
+            text = str(col)
+            if text.endswith(".1") and text[:-2] not in df.columns:
+                rename[col] = text[:-2]
+        if rename:
+            df = df.rename(columns=rename)
         for col in df.columns:
             try:
                 df[col] = pd.to_numeric(df[col])
